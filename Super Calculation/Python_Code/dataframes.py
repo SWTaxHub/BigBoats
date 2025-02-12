@@ -16,15 +16,21 @@ This Python script performs an in-depth analysis of superannuation data from mul
 
 ## Data Sources:
 1. **Employee_Labels** - Contains employee details including Emp Code, PayPoint, Name, Job Role, Department and Award
-2. **Employee_Leave_History_Report_YY**  - Contains details of employee leave taken.  Columns include:
+
+2. ### NOT CURRENTLY USED ### **Employee_Leave_History_Report_YY**  - Contains details of employee leave taken.  Columns include:
 Loc, Employee Name, Leave Start Date, Hours per Day, Leave Code, Date, Hours Worked, Entitled Owing, Pro Rata Owing, Contingent Owing, Operator, Years
+
 3.  **Pay Details History Report YY** - Payment dates along with paycodes for employees.  Columns include:
 Period Ending, Code, Full Name, Pay No., Line, Code, Description, Hours/Value, Pay Rate, Total, Cost Centre, Emp Group 
 4. **Superannuation YY** - Contains payment dates of Super for employees including the amounts paid. Columns include: 
 Loc, Emp.Code, Employee Name, Date Paid, Hours Worked, Ctrb Type, Supr Pcnt, Account Code, Threshold Income, Monthly Threshold, Min Hours, 
 Income for Month, Super for Month, Income for Pay, Super For Pay
 
-
+4. **Paycode Attributes** 
+    - Allownaces_crossEntity -  contains a list of paycodes for allowances with assoicated descriptions, tax status, value and other parameters
+    - Contribitins_crossEntity - contains a list of paycodes for contributions to super with assoicated descriptions, tax status, Type, Value etc.
+    - Deductions_crossEntity - contains a list of paycodes for Deductions from a employees salary, contribution type, tax status, value etc.
+    - Income_crossEntity - contains a list of paycode related to Income Types, Type, Income Category, Time Entry Method etc. 
 
 
 
@@ -52,6 +58,18 @@ leaveHistoryOffshore = pd.DataFrame()
 
 
 payHistoryLabour = pd.DataFrame()
+
+allowancePaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Allowances_crossEntity.csv"
+
+contributionPaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Contributions_crossEntity.csv"
+
+deductionsPaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Deductions_crossEntity.csv"
+
+incomePaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Income_crossEntity.csv"
+
+
+
+
 
 #Merge Dataframes with pandas
 
@@ -102,20 +120,20 @@ def process_payroll_data(directory):
 
 # Example usage
 directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
-processed_data = process_payroll_data(directory)
+Payroll_Labour_data = process_payroll_data(directory)
 
 
 
 
 def process_super_data(directory):
     """
-    Reads and processes payroll data from multiple CSV files in the given directory.
+    Reads and processes Super data from multiple CSV files in the given directory.
 
     Args:
         directory (str): Path to the directory containing payroll CSV files.
 
     Returns:
-        pd.DataFrame: Processed payroll data.
+        pd.DataFrame: Super_Labour_data and Super_Offshore_data.
     """
     all_years_super = pd.DataFrame()
 
@@ -163,8 +181,8 @@ def process_super_data(directory):
     return all_years_super
 
 # Example usage
-directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
-processed_data = process_payroll_data(directory)
+directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Super\CSVs"
+Super_Labour_data = process_payroll_data(directory)
 
 
 
