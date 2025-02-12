@@ -59,6 +59,10 @@ leaveHistoryOffshore = pd.DataFrame()
 
 payHistoryLabour = pd.DataFrame()
 
+allowancePaycodes = pd.DataFrame()
+
+contributionPaycodes = pd.DataFrame()
+
 allowancePaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Allowances_crossEntity.csv"
 
 contributionPaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Contributions_crossEntity.csv"
@@ -67,9 +71,121 @@ deductionsPaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty L
 
 incomePaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Income_crossEntity.csv"
 
+incomePaycodes = pd.read_csv(incomePaycodes)
+
+print(incomePaycodes.columns)
+
+
+def process_income_paycodes(file_name): 
+
+    incomePaycodes = pd.DataFrame()
+    incomePaycodes = pd.read_csv(file_name)
+    # Rename columns for consistency 
+    column_mapping = {
+        'Income Category' : 'Income_Category',
+        'Time Entry Method' :  'Time_Entry_Method', 
+        'Reduce Hours' : 'Reduce_Hours'
+    }
+    incomePaycodes.rename(columns=column_mapping, inplace=True)
 
 
 
+
+    return incomePaycodes
+
+def process_deduction_paycodes(file_name):
+    deductionsPaycodes =  pd.DataFrame()
+    deductionsPaycodes = pd.read_csv(file_name)
+
+    # Rename columns for consistency 
+    column_mapping = {
+        'Contribution Type ' : 'Contribution_Type',
+        'Tax Status' : 'Tax_Status',
+        'Min $' : 'Min_$',
+        'Max $' : 'Max_$',
+        'Super on Pay Advice' : 'Super_on_Pay_Advice'
+    }
+
+
+    deductionsPaycodes.rename(columns=column_mapping, inplace=True)
+    deductionsPaycodes['Value_'] =  deductionsPaycodes['Value_$'].astype(float)
+    deductionsPaycodes['Min_$'] = deductionsPaycodes['Min_$'].astype(float)
+    deductionsPaycodes['Max_$'] =  deductionsPaycodes['Max_$'].astype(float)
+    
+    return deductionsPaycodes
+
+def process_contribution_paycodes(file_name):
+
+    contributionPaycodes = pd.DataFrame()
+    contributionPaycodes = pd.read_csv(file_name)
+    # Rename columns for consistency 
+    column_mapping = {
+        'Code ' : 'Code',
+        'Description ' : 'Description',
+        'Tax status' : 'Tax_status',
+        'Type' : 'Type',
+        'Tax Cert. Status' : 'Tax_Cert_Status',
+        'Value $' : 'Value_$',
+        'Quarterly Value Maximum' : 'Quarterly_Value_Maximum',
+        'Monthly Threshold' : 'Monthly_Threshold',
+        'Super for Casuals Under 18' : 'Super_for_Casuals_Under_18',
+        'Calculation Table' : 'Calculation_Table',
+        'WCOMP' : 'WCOMP',
+        'Min $' : 'Min_$',
+        'Max $' : 'Max_$',
+        'Show rate on Pay Advice' : 'Show_rate_on_Pay_Advice',
+        'Show YTD on Pay Advice ' : 'Show_YTD_on_Pay_Advice',
+        'Allow Data Entry' : 'Allow_Data_Entry',
+        'Multiple G/L Dissections' : 'Multiple_G_L_Dissections',
+        'Show on Pay Advice' : 'Show_on_Pay_Advice',
+        'Disperse over Cost Centres' : 'Disperse_over_Cost_Centres',
+        'Super on Pay Advice' : 'Super_on_Pay_Advice',
+        'Frequency' : 'Frequency',
+        'Days/Date' : 'Days_Date'
+    }
+
+    contributionPaycodes.rename(columns=column_mapping, inplace=True)
+    contributionPaycodes['Value_$'] =  contributionPaycodes['Value_$'].astype(float)
+    contributionPaycodes['Min_Qty'] = contributionPaycodes['Min_Qty'].astype(float)
+    contributionPaycodes['Min_$'] = contributionPaycodes['Min_$'].astype(float)
+    contributionPaycodes['Max_$'] =  contributionPaycodes['Max_$'].astype(float)
+    contributionPaycodes['Days_Date'] = contributionPaycodes['Days_Date'].astype(int)
+
+    return contributionPaycodes
+    
+def process_allowance_paycodes(file_name):
+
+    allowancePaycodes = pd.DataFrame()
+    # Load data from the file
+    allowancePaycodes = pd.read_csv(file_name)  # Replace this with the appropriate function based on your file type
+
+
+        # Rename columns for consistency
+    column_mapping = {
+        'Tax Status' : 'Tax_Status',
+        'Tax Cert. Status' : 'Tax_Cert_Status',
+       'Value $' : 'Value_$',
+        'Min Qty' :  'Min_Qty',
+        'Max Qty' : 'Max_Qty',
+        'Count from' : 'Count_from', 
+        'Min $' : 'Min_$', 
+        'Max $' : 'Max_$', 
+        'Show rate on Pay Advice' : 'Show_rate_on_Pay_Advice',
+       'Show YTD on Pay Advice' : 'Show_YTD_on_Pay_Advice',
+        'Allow date entry' : 'Allow_date_entry',
+       'Multiple G/L Dissections' : 'Multiple_G/L_Dissections',
+         'Include in SG Threshold' : 'Include_in_SG_Threshold',
+        'Back Pay' : 'Back_Pay'
+    }
+    allowancePaycodes.rename(columns=column_mapping, inplace=True)
+
+    # Convert Data Types
+    allowancePaycodes['Value_$'] =  allowancePaycodes['Value_$'].astype(float)
+    allowancePaycodes['Min_Qty'] = allowancePaycodes['Min_Qty'].astype(float)
+    allowancePaycodes['Min_$'] = allowancePaycodes['Min_$'].astype(float)
+    allowancePaycodes['Max_$'] =  allowancePaycodes['Max_$'].astype(float)
+
+    return allowancePaycodes
 
 #Merge Dataframes with pandas
 
@@ -119,8 +235,8 @@ def process_payroll_data(directory):
     return all_years_payHist
 
 # Example usage
-directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
-Payroll_Labour_data = process_payroll_data(directory)
+#directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
+#Payroll_Labour_data = process_payroll_data(directory)
 
 
 
@@ -181,8 +297,8 @@ def process_super_data(directory):
     return all_years_super
 
 # Example usage
-directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Super\CSVs"
-Super_Labour_data = process_payroll_data(directory)
+#directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Super\CSVs"
+#Super_Labour_data = process_payroll_data(directory)
 
 
 
