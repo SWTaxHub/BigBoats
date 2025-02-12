@@ -234,13 +234,16 @@ def process_payroll_data(directory):
     print(all_years_payHist.value_counts())
     print(all_years_payHist.shape)
 
-    all_years_payHist.to_csv('test1.csv')
 
     return all_years_payHist
 
 # Example usage
 directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
 Payroll_Labour_data = process_payroll_data(directory)
+
+
+directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll"
+Payroll_Offshore_data = process_payroll_data(directory)
 
 
 

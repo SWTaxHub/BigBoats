@@ -1,49 +1,52 @@
 import pandas as pd 
-from dataframes import (
-    get_awards_dataframe,
-    get_pay_code_list,
-    get_emp_pay_period_data,
-    get_super_clearing_house_detail,
-    get_super_clearing_house_tpd,
-    get_super_clearing_house_summed,
-    get_dbf_employees,
-    process_super_clearing_house
+from dataframes import(
+    process_income_paycodes,
+    process_deduction_paycodes,
+    process_contribution_paycodes,
+    process_allowance_paycodes,
+    process_payroll_data,
+    process_super_data
 )
 
 import numpy as np
 
 # File paths
-Awards_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Super_Analysis_Python\Awards\5.Award Coverage 15.05.24.csv"
-payCodeList_path = r'C:\\Users\\smits\\OneDrive - SW Accountants & Advisors Pty Ltd\\Desktop\\Super_Analysis_Python\\payCodeList\\Pay-code data.csv'
-payroll_data_path = r"C:\\Users\\smits\\OneDrive - SW Accountants & Advisors Pty Ltd\\Desktop\\Super_Analysis_Python\\Payroll\\Payroll data.xlsx"
-super_clearing_house_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx"
-sheet_name1 = 'Append1'
-sheet_name2 = 'Paycodes Summary'
+#Declare File path for Labour Payroll
+Payroll_Labour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
+#Declare File path for Offshore Payroll
+Payroll_Offshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll"
+#Declare File path for Allowance Paycodes 
+allowancePaycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Allowances_crossEntity.csv"
+#Declare File path for Contribution Paycodes 
+contributionPaycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Contributions_crossEntity.csv"
+#Declare File path for Deductions Paycodes 
+deductionsPaycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Deductions_crossEntity.csv"
+#Declare File path for Income Paycodes 
+incomePaycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Income_crossEntity.csv"
+#Declare File path for Employee Labels Labour
+Employee_labelsLabour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Employee details\Employee_Labels.csv"
+#Declare File path for Employee Labels Offshore
+Employee_labelsOffshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Employee details\Employee_Labels.csv"
+# Declare File path for Super Labour
+Super_Labour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Super\CSVs"
+# Declare file path for super offshore
+Super_Offshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Super\CSVs"
 
-# List of columns to drop
-columns_to_drop = [
-    'USI', 
-    'EPS Rcpnt Id', 
-    'Rcpnt Name', 
-    'Rcpnt ESA', 
-    'Membership Nbr', 
-    'Cntrbn Typ', 
-    'Pay Process Id', 
-    'Deduction Code'
-]
-
-
-superClearningHouseTPD_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx"
 
 # Generate DataFrames
-Awards = get_awards_dataframe(Awards_path)
-paycode_list = get_pay_code_list(payCodeList_path)
-empPayPeriod_data = get_emp_pay_period_data(payroll_data_path)
-superClearingHouse_data = process_super_clearing_house(super_clearing_house_path, sheet_name1, columns_to_drop)
-super_clearing_house_detail = get_super_clearing_house_detail(superClearingHouse_data)
-super_clearing_house_tpd = get_super_clearing_house_tpd(super_clearing_house_path)
-superClearingHouse_summed = get_super_clearing_house_summed(super_clearing_house_detail)
-dbf_employees = get_dbf_employees(super_clearing_house_detail)
+Payroll_Labour_data = process_payroll_data(Payroll_Labour_filepath)
+Payroll_Offshore_data = process_payroll_data(Payroll_Offshore_filepath)
+allowancePaycodes = process_allowance_paycodes(allowancePaycodes_filepath)
+contributionPaycodes = process_contribution_paycodes(contributionPaycodes_filepath)
+deductionsPaycodes = process_deduction_paycodes(deductionsPaycodes_filepath)
+incomePaycodes = process_income_paycodes(incomePaycodes_filepath)
+Super_Labour_data = process_super_data(Super_Labour_filepath)
+Super_Offshore = process_super_data(Super_Offshore_filepath)
+
+
+
+
+
 
 # Clean and convert 'Employee Id' column (keeping leading zeros and formatting with 5 digits)
 superClearingHouse_summed['Employee Id'] = superClearingHouse_summed['Employee Id'] \
