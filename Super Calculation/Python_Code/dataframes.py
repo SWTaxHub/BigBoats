@@ -87,10 +87,6 @@ def process_income_paycodes(file_name):
         'Reduce Hours' : 'Reduce_Hours'
     }
     incomePaycodes.rename(columns=column_mapping, inplace=True)
-
-
-
-
     return incomePaycodes
 
 def process_deduction_paycodes(file_name):
@@ -221,6 +217,12 @@ def process_payroll_data(directory):
     }
     all_years_payHist.rename(columns=column_mapping, inplace=True)
 
+
+    # Drop rows where the 'Code' column has no value (NaN or empty)
+    all_years_payHist['Pay_Number'] = all_years_payHist['Pay_Number'].fillna(0).astype(int)
+
+    all_years_payHist.dropna(subset=['Code'], inplace=True)
+
     # Convert data types
     all_years_payHist['Period_Ending'] = pd.to_datetime(all_years_payHist['Period_Ending'], format='%d/%m/%Y', errors='coerce')
     all_years_payHist['Code'] = all_years_payHist['Code'].astype(str)
@@ -232,11 +234,13 @@ def process_payroll_data(directory):
     print(all_years_payHist.value_counts())
     print(all_years_payHist.shape)
 
+    all_years_payHist.to_csv('test1.csv')
+
     return all_years_payHist
 
 # Example usage
-#directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
-#Payroll_Labour_data = process_payroll_data(directory)
+directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
+Payroll_Labour_data = process_payroll_data(directory)
 
 
 
