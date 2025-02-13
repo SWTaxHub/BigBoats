@@ -53,27 +53,6 @@ Employee_labelsOffshore = pd.DataFrame()
 #Declare File path for Employee Labels Offshore
 Employee_labelsOffshore = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Employee details\Employee_Labels.csv"
 
-leaveHistoryLabour = pd.DataFrame()
-leaveHistoryOffshore = pd.DataFrame()
-
-
-payHistoryLabour = pd.DataFrame()
-
-allowancePaycodes = pd.DataFrame()
-
-contributionPaycodes = pd.DataFrame()
-
-allowancePaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Allowances_crossEntity.csv"
-
-contributionPaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Contributions_crossEntity.csv"
-
-deductionsPaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Deductions_crossEntity.csv"
-
-incomePaycodes = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Income_crossEntity.csv"
-
-incomePaycodes = pd.read_csv(incomePaycodes)
-
-print(incomePaycodes.columns)
 
 
 def process_income_paycodes(file_name): 
@@ -208,8 +187,10 @@ def process_payroll_data(directory):
     # Rename columns for consistency
     column_mapping = {
         'Period Ending': 'Period_Ending',
+        'Code' : 'Emp.Code',
         'Full Name': 'Full_Name',
         'Pay No.': 'Pay_Number',
+        'Code' :  'PayCode',
         'Hours/ Value': 'Hours/Value',
         'Pay Rate': 'Pay_Rate',
         'Cost Centre': 'Cost_Centre',
@@ -225,8 +206,11 @@ def process_payroll_data(directory):
 
     # Convert data types
     all_years_payHist['Period_Ending'] = pd.to_datetime(all_years_payHist['Period_Ending'], format='%d/%m/%Y', errors='coerce')
-    all_years_payHist['Code'] = all_years_payHist['Code'].astype(str)
+    all_years_payHist['Emp.Code'] = all_years_payHist['Emp.Code'].astype(str)
+    all_years_payHist['Emp.Code'] = all_years_payHist['Emp.Code'].str.strip().str.replace(r'\s+', ' ', regex=True).str.upper()
     all_years_payHist['Pay_Number'] = all_years_payHist['Pay_Number'].astype(int)
+    all_years_payHist['PayCode'] = all_years_payHist['PayCode'].astype(str)
+    all_years_payHist['PayCode'] = all_years_payHist['PayCode'].str.strip().str.replace(r'\s+', ' ', regex=True).str.upper()
     all_years_payHist['Hours/Value'] = all_years_payHist['Hours/Value'].astype(float)
     all_years_payHist['Pay_Rate'] = all_years_payHist['Pay_Rate'].astype(float)
     all_years_payHist['Total'] = all_years_payHist['Total'].astype(float)
@@ -236,15 +220,6 @@ def process_payroll_data(directory):
 
 
     return all_years_payHist
-
-# Example usage
-directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
-Payroll_Labour_data = process_payroll_data(directory)
-
-
-directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll"
-Payroll_Offshore_data = process_payroll_data(directory)
-
 
 
 
@@ -286,6 +261,8 @@ def process_super_data(directory):
     all_years_super.rename(columns=column_mapping, inplace=True)
 
     # Convert data types
+    all_years_super['Loc'] = all_years_super['Loc'].astype(str)
+    all_years_super['Emp.Code'] = all_years_super['Emp.Code'].astype(str)
     all_years_super['Date_Paid'] = pd.to_datetime(all_years_super['Date_Paid'], format='%d/%m/%Y', errors='coerce')
     all_years_super['Hours_Worked'] = all_years_super['Hours_Worked'].astype(float)
     all_years_super['Ctrb_Type'] = all_years_super['Ctrb_Type'].astype(str)
@@ -303,9 +280,6 @@ def process_super_data(directory):
 
     return all_years_super
 
-# Example usage
-#directory = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Super\CSVs"
-#Super_Labour_data = process_payroll_data(directory)
 
 
 
