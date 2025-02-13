@@ -51,41 +51,43 @@ Super_Offshore = process_super_data(Super_Offshore_filepath)
 
 
 # Clean and convert 'Employee Id' column (keeping leading zeros and formatting with 5 digits)
-superClearingHouse_summed['Employee Id'] = superClearingHouse_summed['Employee Id'] \
-    .astype(str) \
-    .str.strip() \
-    .replace('', float('NaN')) \
-    .dropna() \
-    .apply(lambda x: x.zfill(7))  # Adds leading zeros to ensure 5 digits
+# superClearingHouse_summed['Employee Id'] = superClearingHouse_summed['Employee Id'] \
+#     .astype(str) \
+#     .str.strip() \
+#     .replace('', float('NaN')) \
+#     .dropna() \
+#     .apply(lambda x: x.zfill(7))  # Adds leading zeros to ensure 5 digits
 
 
 
-superClearingHouse_summed.to_csv('testbeforemanipulations.csv')
+# superClearingHouse_summed.to_csv('testbeforemanipulations.csv')
 
 
-print(super_clearing_house_tpd.shape)
+# print(super_clearing_house_tpd.shape)
 
 
 
-dbf_employees.to_csv('dbf_employees.csv')
+# dbf_employees.to_csv('dbf_employees.csv')
 #Create Payroll Period Code Table lines 52  - 352 
 
 #Step 1 merge the Pay code and employee pay period data frames
 
 
 # Ensure both columns are of the same data type (convert to string)
-empPayPeriod_data['Pay Attribute Code'] = empPayPeriod_data['Pay Attribute Code'].astype(str)
-paycode_list['Attribute Code'] = paycode_list['Attribute Code'].astype(str)
 
-  # Clean the 'Pay Attribute Code'column from empPayPeriod_data: trim whitespace, remove extra spaces, and convert to uppercase
-empPayPeriod_data['Pay Attribute Code'] = empPayPeriod_data['Pay Attribute Code'].str.strip().str.replace(r'\s+', ' ', regex=True).str.upper()
+Payroll_Labour_data['']
 
-  # Clean the 'Attribute Code'column from paycode_list: trim whitespace, remove extra spaces, and convert to uppercase
-paycode_list['Attribute Code'] = paycode_list['Attribute Code'].str.strip().str.replace(r'\s+', ' ', regex=True).str.upper()
 
 #Condense paycode_list to include only the columns required:
 # Define the list of columns to keep
-columns_to_keep = ['Attribute Code', 'Attribute Description', 'TRS - SG Mapping', 'FLUOR - SG Mapping', 'SW - SG mapping']
+columns_to_keep_Paycodes = ['Attribute Code', 'Attribute Description', 'TRS - SG Mapping', 'FLUOR - SG Mapping', 'SW - SG mapping']
+
+columns_to_keep_Payroll =['Loc', 'Emp.Code' , 'Employee_Name', 'Date_Paid', 'Hours_Worked', 'Ctrb_Type', 'Supr_Pcnt', 'Account_Code',
+                  'Threshold_Income', 'Income_for_Month', 'Super_for_Month', 'Income_for_Pay', 'Super_for_Pay'
+]
+
+
+
 
 # Filter the DataFrame to include only the specified columns
 paycode_list = paycode_list[columns_to_keep]
