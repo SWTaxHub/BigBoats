@@ -55,6 +55,56 @@ Employee_labelsOffshore = r"C:\Users\smits\OneDrive - SW Accountants & Advisors 
 
 
 
+def process_combo_paycodes(file_name): 
+    combo_paycodes = pd.DataFrame()
+    combo_paycodes = pd.read_csv(file_name)
+
+    column_mapping = {
+    'PayCode' : 'PayCode',
+    'PayCode_Type' : 'PayCode_Type',
+    'Description' : 'Description',
+    'Type' : 'Type',
+    'Tax_Status/Income_Category' : 'Tax_Status_Income_Category',  # Replaced '/' with '_'
+    'Formula' : 'Formula',
+    'Value' : 'Value',
+    'Fixed/Variable' : 'Fixed_Variable',  # Replaced '/' with '_'
+    'Tax_Cert_Status' : 'Tax_Cert_Status',
+    'Min_$' : 'Min_$',
+    'Max_$' : 'Max_$',
+    'Min_Qty' : 'Min_Qty',
+    'Max_Qty' : 'Max_Qty',
+    'Super on Pay Advice' : 'Super_on_Pay_Advice',
+    'Show rate on Pay Advice' : 'Show_rate_on_Pay_Advice',
+    'Show YTD on Pay Advice ' : 'Show_YTD_on_Pay_Advice',  # Trimmed trailing space
+    'Allow Data Entry' : 'Allow_Data_Entry',
+    'Multiple G/L Dissections' : 'Multiple_G_L_Dissections',  # Replaced '/' with '_'
+    'Show on Pay Advice' : 'Show_on_Pay_Advice',
+    'Include in SG Threshold' : 'Include_in_SG_Threshold',
+    'Frequency' : 'Frequency',
+    'Super for Casuals Under 18' : 'Super_for_Casuals_Under_18',
+    'Reduce_Hours' : 'Reduce_Hours',
+    'Inactive' : 'Inactive',
+    'Calculation Table' : 'Calculation_Table',
+    'WCOMP' : 'WCOMP',
+    'Days/Date' : 'Days_Date',  # Replaced '/' with '_'
+    'Back Pay' : 'Back_Pay',
+    'Count from' : 'Count_from',
+    'Disperse over Cost Centres' : 'Disperse_over_Cost_Centres',
+    'Quarterly Value Maximum' : 'Quarterly_Value_Maximum',
+    'Monthly Threshold' : 'Monthly_Threshold'
+}
+
+
+
+    combo_paycodes['Value_'] =  combo_paycodes['Value_$'].astype(float)
+    combo_paycodes['Min_$'] = combo_paycodes['Min_$'].astype(float)
+    combo_paycodes['Max_$'] =  combo_paycodes['Max_$'].astype(float)
+
+
+    combo_paycodes.rename(columns=column_mapping, inplace=True)
+    return combo_paycodes
+
+
 def process_income_paycodes(file_name): 
 
     incomePaycodes = pd.DataFrame()
