@@ -96,9 +96,9 @@ def process_combo_paycodes(file_name):
 
 
 
-    combo_paycodes['Value_'] =  combo_paycodes['Value_$'].astype(float)
-    combo_paycodes['Min_$'] = combo_paycodes['Min_$'].astype(float)
-    combo_paycodes['Max_$'] =  combo_paycodes['Max_$'].astype(float)
+    #combo_paycodes['Value_'] =  combo_paycodes['Value_$'].astype(float)
+    #combo_paycodes['Min_$'] = combo_paycodes['Min_$'].astype(float)
+    #combo_paycodes['Max_$'] =  combo_paycodes['Max_$'].astype(float)
 
 
     combo_paycodes.rename(columns=column_mapping, inplace=True)
@@ -237,7 +237,7 @@ def process_payroll_data(directory):
     # Rename columns for consistency
     column_mapping = {
         'Period Ending': 'Period_Ending',
-        'Code' : 'Emp.Code',
+        'Code_' : 'Emp.Code',
         'Full Name': 'Full_Name',
         'Pay No.': 'Pay_Number',
         'Code' :  'PayCode',
@@ -252,12 +252,14 @@ def process_payroll_data(directory):
     # Drop rows where the 'Code' column has no value (NaN or empty)
     all_years_payHist['Pay_Number'] = all_years_payHist['Pay_Number'].fillna(0).astype(int)
 
-    all_years_payHist.dropna(subset=['Code'], inplace=True)
+    all_years_payHist.dropna(subset=['PayCode'], inplace=True)
+    print(all_years_payHist.columns)
+
 
     # Convert data types
     all_years_payHist['Period_Ending'] = pd.to_datetime(all_years_payHist['Period_Ending'], format='%d/%m/%Y', errors='coerce')
-    all_years_payHist['Emp.Code'] = all_years_payHist['Emp.Code'].astype(str)
-    all_years_payHist['Emp.Code'] = all_years_payHist['Emp.Code'].str.strip().str.replace(r'\s+', ' ', regex=True).str.upper()
+    #all_years_payHist['Emp.Code'] = all_years_payHist['Emp.Code'].astype(str)
+    #all_years_payHist['Emp.Code'] = all_years_payHist['Emp.Code'].str.strip().str.replace(r'\s+', ' ', regex=True).str.upper()
     all_years_payHist['Pay_Number'] = all_years_payHist['Pay_Number'].astype(int)
     all_years_payHist['PayCode'] = all_years_payHist['PayCode'].astype(str)
     all_years_payHist['PayCode'] = all_years_payHist['PayCode'].str.strip().str.replace(r'\s+', ' ', regex=True).str.upper()
