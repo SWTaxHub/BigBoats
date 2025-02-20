@@ -203,9 +203,8 @@ merged_data['SG_Rate'] = np.where(
 
 merged_data = merged_data.drop_duplicates() 
 
-merged_data.to_csv('mergedTest.csv')
 
-# got to here as of
+
 
 
 # merged_data.to_csv('SG_Rate_test.csv')
@@ -223,11 +222,80 @@ merged_data.to_csv('mergedTest.csv')
 # #= Table.AddColumn(#"Add col - additional super rate", "SW Map - SG expected", each if [#"SW - SG mapping"] = "OTE" then [Amt] * [SG Rate] 
 # #  else 0, type number)
 
-# merged_data['SW Map - SG expected'] = np.where(
-#   merged_data['SW - SG mapping'] == 'OTE',
-#   merged_data['Amt'] * merged_data['SG Rate'],
-#   0
-# )
+
+
+# Step 9: Add column for BigBoats - SG Actuals 
+
+OTE_paycodesBigBoats = [
+    "NORMAL",
+    "CASBNS",
+    "PH",
+    "AL",
+    "SL",
+    "TAFE",
+    "WCOMP-EX",
+    "HRSBNS",
+    "AL-CASHO",
+    "BEREAVE",
+    "PL-VACC",
+    "VEHICLE",
+    "BACK",
+    "MVGARTH",
+    "BONUS"
+]
+
+merged_data['BigBoats - SG Actuals'] = np.where(
+    merged_data['PayCode'].isin(OTE_paycodesBigBoats),  # Replace 'Paycode' with the correct column name
+    merged_data['Total'] * merged_data['SG_Rate'],
+    0
+)
+
+
+
+
+
+# Step 10: Add column for SW Map - SG Expected
+
+OTE_paycodesSW = [
+    "NORMAL",
+    "CASBNS",
+    "PH",
+    "AL",
+    "SL",
+    "HRSBNS",
+    "AL-CASHO",
+    "BEREAVE",
+    "PL-VACC",
+    "LOADING",
+    "MEAL4",
+    "BACK",
+    "MVGARTH",
+    "LOAD",
+    "MEAL",
+    "BONUS"
+]
+
+
+merged_data['SW Map - SG expected'] = np.where(
+    merged_data['PayCode'].isin(OTE_paycodesSW),  # Replace 'Paycode' with the correct column name
+    merged_data['Total'] * merged_data['SG_Rate'],
+    0
+)
+
+
+
+# Step 11:  Difference between SW Map and Big Boats Actuals 
+
+merged_data['Super_Diff'] = merged_data['SW Map - SG expected'] - merged_data['BigBoats - SG Actuals']
+
+merged_data.to_csv('mergedTest.csv')
+
+
+
+
+# Next step is to group that data so its per quarter per employee - 20/02/25
+
+
 
 # # Step 11: Add Column SW - OTE
 # #= Table.AddColumn(#"Add col - minimum SG amt", "SW - OTE", each if [#"SW - SG mapping"] = "OTE" then [Amt] else 0, type number)
