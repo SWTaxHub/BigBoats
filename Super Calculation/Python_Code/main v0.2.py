@@ -10,7 +10,6 @@ from dataframes import(
 )
 
 import numpy as np
-"""testing """
 
 
 
@@ -224,6 +223,75 @@ merged_data = merged_data.drop_duplicates()
 
 
 
+# Step 9: Group the data into Quarters 
+
+
+
+# Ensure Period_Ending is in datetime format
+merged_data['Period_Ending'] = pd.to_datetime(merged_data['Period_Ending'])
+
+# Define aggregation methods for each column
+agg_methods = {
+    'Full_Name': 'first',  
+    'Pay_Number': 'first',
+    'Line': 'first',
+    'Description_x': 'first',
+    'Hours/Value': 'sum',
+    'Pay_Rate': 'mean',
+    'Total': 'sum',
+    'Cost_Centre': 'first',
+    'Emp_Group': 'first',
+    'PayCode_Type': 'first',
+    'Description_y': 'first',
+    'Type': 'first',
+    'Tax_Status_Income_Category': 'first',
+    'Formula': 'first',
+    'Value': 'sum',
+    'Fixed_Variable': 'first',
+    'Tax_Cert_Status': 'first',
+    'Min_$': 'first',
+    'Max_$': 'first',
+    'Min_Qty': 'first',
+    'Max_Qty': 'first',
+    'Super_on_Pay_Advice': 'first',
+    'Show_rate_on_Pay_Advice': 'first',
+    'Show_YTD_on_Pay_Advice': 'first',
+    'Allow_Data_Entry': 'first',
+    'Multiple_G_L_Dissections': 'first',
+    'Show_on_Pay_Advice': 'first',
+    'Include_in_SG_Threshold': 'first',
+    'Frequency': 'first',
+    'Super_for_Casuals_Under_18': 'first',
+    'Reduce_Hours': 'sum',
+    'Inactive': 'first',
+    'Calculation_Table': 'first',
+    'WCOMP': 'first',
+    'Days_Date': 'first',
+    'Back_Pay': 'sum',
+    'Count_from': 'first',
+    'Disperse_over_Cost_Centres': 'first',
+    'Quarterly_Value_Maximum': 'first',
+    'Monthly_Threshold': 'first',
+    'SG_Rate': 'mean'
+}
+
+# Group by Emp.Code, PayCode, and Quarter
+quarterly_summary = (
+    merged_data
+    .groupby([
+        'Emp.Code', 
+        'PayCode', 
+        pd.Grouper(key='Period_Ending', freq='QE')
+    ])
+    .agg(agg_methods)
+    .reset_index()
+)
+
+# Rename for clarity
+quarterly_summary.rename(columns={'Total': 'Quarterly_Total'}, inplace=True)
+
+
+
 # Step 9: Add column for BigBoats - SG Actuals 
 
 OTE_paycodesBigBoats = [
@@ -244,11 +312,19 @@ OTE_paycodesBigBoats = [
     "BONUS"
 ]
 
-merged_data['BigBoats - SG Actuals'] = np.where(
-    merged_data['PayCode'].isin(OTE_paycodesBigBoats),  # Replace 'Paycode' with the correct column name
-    merged_data['Total'] * merged_data['SG_Rate'],
+quarterly_summary['BigBoats - SG Actuals'] = np.where(
+    quarterly_summary['PayCode'].isin(OTE_paycodesBigBoats),  # Replace 'Paycode' with the correct column name
+    quarterly_summary['Quarterly_Total'] * quarterly_summary['SG_Rate'],
     0
 )
+
+
+
+# merged_data['BigBoats - SG Actuals'] = np.where(
+#     merged_data['PayCode'].isin(OTE_paycodesBigBoats),  # Replace 'Paycode' with the correct column name
+#     merged_data['Total'] * merged_data['SG_Rate'],
+#     0
+# )
 
 
 
@@ -275,34 +351,428 @@ OTE_paycodesSW = [
     "BONUS"
 ]
 
-
-merged_data['SW Map - SG expected'] = np.where(
-    merged_data['PayCode'].isin(OTE_paycodesSW),  # Replace 'Paycode' with the correct column name
-    merged_data['Total'] * merged_data['SG_Rate'],
+quarterly_summary['SW Map - SG expected'] = np.where(
+    quarterly_summary['PayCode'].isin(OTE_paycodesSW),  # Replace 'Paycode' with the correct column name
+    quarterly_summary['Quarterly_Total'] * quarterly_summary['SG_Rate'],
     0
 )
 
 
+# merged_data['SW Map - SG expected'] = np.where(
+#     merged_data['PayCode'].isin(OTE_paycodesSW),  # Replace 'Paycode' with the correct column name
+#     merged_data['Total'] * merged_data['SG_Rate'],
+#     0
+# )
+
+
 
 # Step 11:  Difference between SW Map and Big Boats Actuals 
+quarterly_summary['Super_Diff'] = quarterly_summary['SW Map - SG expected'] - quarterly_summary['BigBoats - SG Actuals']
 
-merged_data['Super_Diff'] = merged_data['SW Map - SG expected'] - merged_data['BigBoats - SG Actuals']
+# merged_data['Super_Diff'] = merged_data['SW Map - SG expected'] - merged_data['BigBoats - SG Actuals']
+
+
+print(merged_data.columns)
+
+# Next step is to group that data so its per quarter per employee - 20/02/25
+
 
 merged_data.to_csv('mergedTest.csv')
 
 
 
+# # Ensure Period_Ending is in datetime format
+# merged_data['Period_Ending'] = pd.to_datetime(merged_data['Period_Ending'])
+
+# # Define aggregation methods for each column
+# agg_methods = {
+#     'Full_Name': 'first',  
+#     'Pay_Number': 'first',
+#     'Line': 'first',
+#     'Description_x': 'first',
+#     'Hours/Value': 'sum',
+#     'Pay_Rate': 'mean',
+#     'Total': 'sum',
+#     'Cost_Centre': 'first',
+#     'Emp_Group': 'first',
+#     'PayCode_Type': 'first',
+#     'Description_y': 'first',
+#     'Type': 'first',
+#     'Tax_Status_Income_Category': 'first',
+#     'Formula': 'first',
+#     'Value': 'sum',
+#     'Fixed_Variable': 'first',
+#     'Tax_Cert_Status': 'first',
+#     'Min_$': 'first',
+#     'Max_$': 'first',
+#     'Min_Qty': 'first',
+#     'Max_Qty': 'first',
+#     'Super_on_Pay_Advice': 'first',
+#     'Show_rate_on_Pay_Advice': 'first',
+#     'Show_YTD_on_Pay_Advice': 'first',
+#     'Allow_Data_Entry': 'first',
+#     'Multiple_G_L_Dissections': 'first',
+#     'Show_on_Pay_Advice': 'first',
+#     'Include_in_SG_Threshold': 'first',
+#     'Frequency': 'first',
+#     'Super_for_Casuals_Under_18': 'first',
+#     'Reduce_Hours': 'sum',
+#     'Inactive': 'first',
+#     'Calculation_Table': 'first',
+#     'WCOMP': 'first',
+#     'Days_Date': 'first',
+#     'Back_Pay': 'sum',
+#     'Count_from': 'first',
+#     'Disperse_over_Cost_Centres': 'first',
+#     'Quarterly_Value_Maximum': 'first',
+#     'Monthly_Threshold': 'first',
+#     'SG_Rate': 'mean',
+#     'BigBoats - SG Actuals': 'sum',
+#     'SW Map - SG expected': 'sum',
+#     'Super_Diff': 'sum',
+# }
+
+# # Group by Emp.Code, PayCode, and Quarter
+# quarterly_summary = (
+#     merged_data
+#     .groupby([
+#         'Emp.Code', 
+#         'PayCode', 
+#         pd.Grouper(key='Period_Ending', freq='QE')
+#     ])
+#     .agg(agg_methods)
+#     .reset_index()
+# )
+
+# # Rename for clarity
+# quarterly_summary.rename(columns={'Total': 'Quarterly_Total'}, inplace=True)
+
+# Display result
+print(quarterly_summary)
+
+
+quarterly_summary.to_csv('quarterly_summary_payroll_OFFSHORE.csv')
+
+
+
+
+
+# Labour Payroll
+
+
+print(Payroll_Labour_data['PayCode'].unique())
+
+
+
+
+merged_labour_data = Payroll_Labour_data.merge(
+    combo_Paycodes,
+    how="left",
+    left_on="PayCode",
+    right_on="PayCode"
+)
+
+print(merged_data.head())  # Check first few rows after merge
+print(merged_data.isnull().sum())  # Check for null values
+
+
+merged_labour_data.to_csv('MergedDataTest.csv')
+
+
+# # Step 6: Remove duplicates
+# # Count the number of rows before dropping duplicates
+rows_before = len(merged_labour_data)
+
+
+
+# # Remove duplicates
+merged_labour_data = merged_labour_data.drop_duplicates()
+
+# # Count the number of rows after dropping duplicates
+rows_after = len(merged_labour_data)
+
+# # Calculate the number of duplicates dropped
+duplicates_dropped = rows_before - rows_after
+
+# # Display the result
+print(f"Number of duplicates dropped: {duplicates_dropped}")
+
+
+merged_labour_data.to_csv('MergedDataTest.csv')
+
+# # Step 7: Add Column 'FLOUR/TRS - SG Mapping' 
+# #"FLUOR/TRS - SG Mapping" as text, each if [Entity] = "TRS" and [#"TRS - SG Mapping"] = "Y" then "Y" 
+# # else if [Entity] = "FLUOR" and [#"FLUOR - SG Mapping"] = "Y" then "Y" else "N", type text)
+
+
+
+
+merged_labour_data['SG_Rate'] = np.where(
+    merged_labour_data['Period_Ending'].dt.year == 2021, 0.095,
+    np.where(
+    merged_labour_data['Period_Ending'].dt.year == 2022, 0.1,
+    np.where(
+        merged_labour_data['Period_Ending'].dt.year == 2023, 0.105,
+        np.where(
+            merged_labour_data['Period_Ending'].dt.year == 2024, 0.11,
+            0  # Default value if none of the conditions are met
+        )
+    )
+  )
+)
+
+merged_labour_data = merged_labour_data.drop_duplicates() 
+
+
+
+
+
+
+
+# Ensure Period_Ending is in datetime format
+merged_labour_data['Period_Ending'] = pd.to_datetime(merged_labour_data['Period_Ending'])
+
+# Define aggregation methods for each column
+agg_methods = {
+    'Full_Name': 'first',  
+    'Pay_Number': 'first',
+    'Line': 'first',
+    'Description_x': 'first',
+    'Hours/Value': 'sum',
+    'Pay_Rate': 'mean',
+    'Total': 'sum',
+    'Cost_Centre': 'first',
+    'Emp_Group': 'first',
+    'PayCode_Type': 'first',
+    'Description_y': 'first',
+    'Type': 'first',
+    'Tax_Status_Income_Category': 'first',
+    'Formula': 'first',
+    'Value': 'sum',
+    'Fixed_Variable': 'first',
+    'Tax_Cert_Status': 'first',
+    'Min_$': 'first',
+    'Max_$': 'first',
+    'Min_Qty': 'first',
+    'Max_Qty': 'first',
+    'Super_on_Pay_Advice': 'first',
+    'Show_rate_on_Pay_Advice': 'first',
+    'Show_YTD_on_Pay_Advice': 'first',
+    'Allow_Data_Entry': 'first',
+    'Multiple_G_L_Dissections': 'first',
+    'Show_on_Pay_Advice': 'first',
+    'Include_in_SG_Threshold': 'first',
+    'Frequency': 'first',
+    'Super_for_Casuals_Under_18': 'first',
+    'Reduce_Hours': 'sum',
+    'Inactive': 'first',
+    'Calculation_Table': 'first',
+    'WCOMP': 'first',
+    'Days_Date': 'first',
+    'Back_Pay': 'sum',
+    'Count_from': 'first',
+    'Disperse_over_Cost_Centres': 'first',
+    'Quarterly_Value_Maximum': 'first',
+    'Monthly_Threshold': 'first',
+    'SG_Rate': 'mean'
+}
+
+# Group by Emp.Code, PayCode, and Quarter
+quarterly_summary_Labour = (
+    merged_labour_data
+    .groupby([
+        'Emp.Code', 
+        'PayCode', 
+        pd.Grouper(key='Period_Ending', freq='QE')
+    ])
+    .agg(agg_methods)
+    .reset_index()
+)
+
+# Rename for clarity
+quarterly_summary_Labour.rename(columns={'Total': 'Quarterly_Total'}, inplace=True)
+
+
+
+# Step 9: Add column for BigBoats - SG Actuals 
+
+OTE_paycodesBigBoats = [
+    "NORMAL",
+    "CASBNS",
+    "PH",
+    "AL",
+    "SL",
+    "TAFE",
+    "WCOMP-EX",
+    "HRSBNS",
+    "AL-CASHO",
+    "BEREAVE",
+    "PL-VACC",
+    "VEHICLE",
+    "BACK",
+    "MVGARTH",
+    "BONUS"
+]
+
+quarterly_summary_Labour['BigBoats - SG Actuals'] = np.where(
+    quarterly_summary_Labour['PayCode'].isin(OTE_paycodesBigBoats),  # Replace 'Paycode' with the correct column name
+    quarterly_summary_Labour['Quarterly_Total'] * quarterly_summary_Labour['SG_Rate'],
+    0
+)
+
+
+
+# merged_labour_data['BigBoats - SG Actuals'] = np.where(
+#     merged_labour_data['PayCode'].isin(OTE_paycodesBigBoats),  # Replace 'Paycode' with the correct column name
+#     merged_labour_data['Total'] * merged_labour_data['SG_Rate'],
+#     0
+# )
+
+
+
+
+
+# Step 10: Add column for SW Map - SG Expected
+
+OTE_paycodesSW = [
+    "NORMAL",
+    "CASBNS",
+    "PH",
+    "AL",
+    "SL",
+    "HRSBNS",
+    "AL-CASHO",
+    "BEREAVE",
+    "PL-VACC",
+    "LOADING",
+    "MEAL4",
+    "BACK",
+    "MVGARTH",
+    "LOAD",
+    "MEAL",
+    "BONUS"
+]
+
+quarterly_summary_Labour['SW Map - SG expected'] = np.where(
+    quarterly_summary_Labour['PayCode'].isin(OTE_paycodesSW),  # Replace 'Paycode' with the correct column name
+    quarterly_summary_Labour['Quarterly_Total'] * quarterly_summary_Labour['SG_Rate'],
+    0
+)
+
+
+# merged_labour_data['SW Map - SG expected'] = np.where(
+#     merged_labour_data['PayCode'].isin(OTE_paycodesSW),  # Replace 'Paycode' with the correct column name
+#     merged_labour_data['Total'] * merged_labour_data['SG_Rate'],
+#     0
+# )
+
+
+
+# Step 11:  Difference between SW Map and Big Boats Actuals 
+quarterly_summary_Labour['Super_Diff'] = quarterly_summary_Labour['SW Map - SG expected'] - quarterly_summary_Labour['BigBoats - SG Actuals']
+
+# merged_labour_data['Super_Diff'] = merged_labour_data['SW Map - SG expected'] - merged_labour_data['BigBoats - SG Actuals']
+
+
+print(merged_labour_data.columns)
 
 # Next step is to group that data so its per quarter per employee - 20/02/25
+
+
+merged_labour_data.to_csv('mergedTest.csv')
+
+
+
+# # Ensure Period_Ending is in datetime format
+# merged_labour_data['Period_Ending'] = pd.to_datetime(merged_labour_data['Period_Ending'])
+
+# # Define aggregation methods for each column
+# agg_methods = {
+#     'Full_Name': 'first',  
+#     'Pay_Number': 'first',
+#     'Line': 'first',
+#     'Description_x': 'first',
+#     'Hours/Value': 'sum',
+#     'Pay_Rate': 'mean',
+#     'Total': 'sum',
+#     'Cost_Centre': 'first',
+#     'Emp_Group': 'first',
+#     'PayCode_Type': 'first',
+#     'Description_y': 'first',
+#     'Type': 'first',
+#     'Tax_Status_Income_Category': 'first',
+#     'Formula': 'first',
+#     'Value': 'sum',
+#     'Fixed_Variable': 'first',
+#     'Tax_Cert_Status': 'first',
+#     'Min_$': 'first',
+#     'Max_$': 'first',
+#     'Min_Qty': 'first',
+#     'Max_Qty': 'first',
+#     'Super_on_Pay_Advice': 'first',
+#     'Show_rate_on_Pay_Advice': 'first',
+#     'Show_YTD_on_Pay_Advice': 'first',
+#     'Allow_Data_Entry': 'first',
+#     'Multiple_G_L_Dissections': 'first',
+#     'Show_on_Pay_Advice': 'first',
+#     'Include_in_SG_Threshold': 'first',
+#     'Frequency': 'first',
+#     'Super_for_Casuals_Under_18': 'first',
+#     'Reduce_Hours': 'sum',
+#     'Inactive': 'first',
+#     'Calculation_Table': 'first',
+#     'WCOMP': 'first',
+#     'Days_Date': 'first',
+#     'Back_Pay': 'sum',
+#     'Count_from': 'first',
+#     'Disperse_over_Cost_Centres': 'first',
+#     'Quarterly_Value_Maximum': 'first',
+#     'Monthly_Threshold': 'first',
+#     'SG_Rate': 'mean',
+#     'BigBoats - SG Actuals': 'sum',
+#     'SW Map - SG expected': 'sum',
+#     'Super_Diff': 'sum',
+# }
+
+# # Group by Emp.Code, PayCode, and Quarter
+# quarterly_summary_Labour = (
+#     merged_labour_data
+#     .groupby([
+#         'Emp.Code', 
+#         'PayCode', 
+#         pd.Grouper(key='Period_Ending', freq='QE')
+#     ])
+#     .agg(agg_methods)
+#     .reset_index()
+# )
+
+# # Rename for clarity
+# quarterly_summary_Labour.rename(columns={'Total': 'Quarterly_Total'}, inplace=True)
+
+# Display result
+print(quarterly_summary_Labour)
+
+
+quarterly_summary_Labour.to_csv('quarterly_summary_payroll_Labour.csv')
+
+
+
+
+
+
+
+
+
+
 
 
 
 # # Step 11: Add Column SW - OTE
 # #= Table.AddColumn(#"Add col - minimum SG amt", "SW - OTE", each if [#"SW - SG mapping"] = "OTE" then [Amt] else 0, type number)
 
-# merged_data['SW - OTE'] = np.where(
-#   merged_data['SW - SG mapping'] == 'OTE',
-#   merged_data['Amt'],
+# merged_labour_data['SW - OTE'] = np.where(
+#   merged_labour_data['SW - SG mapping'] == 'OTE',
+#   merged_labour_data['Amt'],
 #   0
 
 # )
@@ -311,53 +781,53 @@ merged_data.to_csv('mergedTest.csv')
 # # = Table.AddColumn(#"Add col - SW - OTE", "SW Map - add expected", each if [#"SW - SG mapping"] = "OTE" then [Amt] * [Additional Super Rate]
 # #  else 0, type number)
 
-# merged_data['SW Map - add expected'] = np.where(
-#  merged_data['SW - SG mapping'] == 'OTE',
-#  merged_data['Amt'] * merged_data['Additional Super Rate'],
+# merged_labour_data['SW Map - add expected'] = np.where(
+#  merged_labour_data['SW - SG mapping'] == 'OTE',
+#  merged_labour_data['Amt'] * merged_labour_data['Additional Super Rate'],
 #  0
 # )
 
 # # Step 13: Add Column FLUOR map - SG expected
 # #= Table.AddColumn(#"Add col - additional super amt", "FLUOR map - SG expected", each if [#"FLUOR/TRS - SG Mapping"] = "Y" then [Amt] * [SG Rate] else 0, type number)
 
-# merged_data['FLUOR map - SG expected'] = np.where(
-#   merged_data['FLUOR/TRS - SG Mapping'] == 'Y',
-#   merged_data['Amt'] * merged_data['SG Rate'],
+# merged_labour_data['FLUOR map - SG expected'] = np.where(
+#   merged_labour_data['FLUOR/TRS - SG Mapping'] == 'Y',
+#   merged_labour_data['Amt'] * merged_labour_data['SG Rate'],
 #   0
 # )
 
 # # Step 14: Add Column Flour -OTE
 # #= Table.AddColumn(#"Add col - min SG FLUOR", "FLUOR - OTE", each if [#"FLUOR/TRS - SG Mapping"] = "Y" then [Amt] else 0, type number)
 
-# merged_data['FLOUR - OTE'] = np.where(
-#   merged_data['FLUOR/TRS - SG Mapping'] == 'Y',
-#   merged_data['Amt'],
+# merged_labour_data['FLOUR - OTE'] = np.where(
+#   merged_labour_data['FLUOR/TRS - SG Mapping'] == 'Y',
+#   merged_labour_data['Amt'],
 #   0
 # )
 
 # # Step 15: Add Column FLUOR map - add SG expected"
 # #= Table.AddColumn(#"Add col - FLUOR OTE", "FLUOR map - add SG expected", each if [#"FLUOR/TRS - SG Mapping"] = "Y" then [Amt] * [Additional Super Rate] else 0, type number)
 
-# merged_data['FLUOR map - add SG expected'] = np.where(
-#   merged_data['FLUOR/TRS - SG Mapping'] == 'Y',
-#   merged_data['Amt'] * merged_data['Additional Super Rate'],
+# merged_labour_data['FLUOR map - add SG expected'] = np.where(
+#   merged_labour_data['FLUOR/TRS - SG Mapping'] == 'Y',
+#   merged_labour_data['Amt'] * merged_labour_data['Additional Super Rate'],
 #   0
 # )
 
 # # Step 16: Add Column Payroll Super
 # #= Table.AddColumn(#"Add col - add SG FLUOR", "Payroll Super", each if [#"SW - SG mapping"] = "Super" then [Amt] else 0, type number)
 
-# merged_data['Payroll Super'] = np.where(
-#   merged_data['SW - SG mapping'] == 'Super',
-#   merged_data['Amt'],
+# merged_labour_data['Payroll Super'] = np.where(
+#   merged_labour_data['SW - SG mapping'] == 'Super',
+#   merged_labour_data['Amt'],
 #   0
 # )
 
 # # Step 17: Drop unwanted columns
-# merged_data = merged_data.drop(columns=["TRS - SG Mapping", "FLUOR - SG Mapping","Location", "Location Desc", "Pay Point", "Pay Point Desc", "Advice"])
+# merged_labour_data = merged_labour_data.drop(columns=["TRS - SG Mapping", "FLUOR - SG Mapping","Location", "Location Desc", "Pay Point", "Pay Point Desc", "Advice"])
 
 # print('colums: ')
-# print(merged_data.columns)
+# print(merged_labour_data.columns)
 
 # # Step 18: Reorder columns
 
@@ -370,13 +840,13 @@ merged_data.to_csv('mergedTest.csv')
 #     "FLUOR map - add SG expected", "FLUOR map - SG expected", "Payroll Super"
 # ]
 
-# merged_data = merged_data[column_order]
+# merged_labour_data = merged_labour_data[column_order]
 
-# merged_data.rename(columns={'PE Date_x': 'PE Date'}, inplace=True)
+# merged_labour_data.rename(columns={'PE Date_x': 'PE Date'}, inplace=True)
 
 
 # # Step 19: Sort the DataFrame
-# merged_data = merged_data.sort_values(
+# merged_labour_data = merged_labour_data.sort_values(
 #     by=["Employee Name", "PE Date", "Pay Attribute Code"],
 #     ascending=[True, True, True]  # All columns sorted in ascending order
 # )
@@ -384,49 +854,49 @@ merged_data.to_csv('mergedTest.csv')
 # # Step 20: Replace SG Rate where data is 30th june 2023
 # #= Table.ReplaceValue(#"Sorted Rows", each [SG Rate], each if [PE Date] = #date(2023, 6, 30) then Decimal.From(0.11) else Decimal.From([SG Rate]),Replacer.ReplaceValue,{"SG Rate"})
 
-# merged_data['PE Date'] = pd.to_datetime(merged_data['PE Date'])
-# merged_data['SG Rate'] = np.where(
-#     merged_data['PE Date'] == pd.Timestamp('2023-06-30'),
+# merged_labour_data['PE Date'] = pd.to_datetime(merged_labour_data['PE Date'])
+# merged_labour_data['SG Rate'] = np.where(
+#     merged_labour_data['PE Date'] == pd.Timestamp('2023-06-30'),
 #     0.11,
-#     merged_data['SG Rate']
+#     merged_labour_data['SG Rate']
 # )
 
 # # Step 21: Replace SG Rate where data is 28th June 2024
 
-# merged_data['PE Date'] = pd.to_datetime(merged_data['PE Date'])
-# merged_data['SG Rate'] = np.where(
-#   merged_data['PE Date'] == pd.Timestamp('2024-06-28'),
+# merged_labour_data['PE Date'] = pd.to_datetime(merged_labour_data['PE Date'])
+# merged_labour_data['SG Rate'] = np.where(
+#   merged_labour_data['PE Date'] == pd.Timestamp('2024-06-28'),
 #   0.115,
-#   merged_data['SG Rate']
+#   merged_labour_data['SG Rate']
 # )
 
 
 # # Step 22: Replace SG Rate based on a series of dates
 
 # # Ensure 'PE Date' is in datetime format
-# merged_data['PE Date'] = pd.to_datetime(merged_data['PE Date'])
+# merged_labour_data['PE Date'] = pd.to_datetime(merged_labour_data['PE Date'])
 
 # # Define the conditions
 # condition = (
-#     ((merged_data['PE Date'] == pd.Timestamp('2022-02-25')) & (merged_data['Entity'] == "FLUOR")) |
-#     ((merged_data['PE Date'] == pd.Timestamp('2022-03-11')) & (merged_data['Entity'] == "FLUOR")) |
-#     ((merged_data['PE Date'] == pd.Timestamp('2022-03-25')) & (merged_data['Entity'] == "FLUOR"))
+#     ((merged_labour_data['PE Date'] == pd.Timestamp('2022-02-25')) & (merged_labour_data['Entity'] == "FLUOR")) |
+#     ((merged_labour_data['PE Date'] == pd.Timestamp('2022-03-11')) & (merged_labour_data['Entity'] == "FLUOR")) |
+#     ((merged_labour_data['PE Date'] == pd.Timestamp('2022-03-25')) & (merged_labour_data['Entity'] == "FLUOR"))
 # )
 
 # # Apply the replacement
-# merged_data['SG Rate'] = np.where(
+# merged_labour_data['SG Rate'] = np.where(
 #     condition,
 #     0.105,  # Replace with 0.105 if the condition is met
-#     merged_data['SG Rate']  # Keep the existing value otherwise
+#     merged_labour_data['SG Rate']  # Keep the existing value otherwise
 
 
 # )
 
-# merged_data['SG Rate'] = merged_data['SG Rate'].astype(float)
+# merged_labour_data['SG Rate'] = merged_labour_data['SG Rate'].astype(float)
 # # Display the first few rows of the resulting DataFrame
-# print(merged_data.head())
+# print(merged_labour_data.head())
 
-# merged_data.to_csv('testingtesting123.csv')
+# merged_labour_data.to_csv('testingtesting123.csv')
 
 
 # # Create QTR Results Table lines 357 to
