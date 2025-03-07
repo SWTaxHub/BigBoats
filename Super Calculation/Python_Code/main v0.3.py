@@ -72,6 +72,44 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
     merged_data = merged_data.drop_duplicates()
     rows_after = len(merged_data)
     print(f"Number of duplicates dropped: {rows_before - rows_after}")
+
+
+
+    merged_data['Period_Ending'] = pd.to_datetime(merged_data['Period_Ending'])
+    
+
+   
+
+    merged_data['FY_Q'] = np.where(
+        merged_data['Period_Ending'].dt.month.isin([7, 8, 9]), 'Q1',
+        np.where(
+            merged_data['Period_Ending'].dt.month.isin([10, 11, 12]), 'Q2',
+            np.where(
+                merged_data['Period_Ending'].dt.month.isin([1, 2, 3]), 'Q3',
+                np.where(
+                    merged_data['Period_Ending'].dt.month.isin([4, 5, 6]), 'Q4',
+                    'Unknown'  # Use a string instead of np.nan to avoid dtype mismatch
+                )
+            )
+        )
+    )
+
+        # Assign the financial year (FY) based on the ending period
+    merged_data['Financial_Year'] = np.where(
+        merged_data['Period_Ending'].dt.month >= 7,
+        merged_data['Period_Ending'].dt.year + 1,  # July–Dec belongs to the next FY
+        merged_data['Period_Ending'].dt.year  # Jan–June belongs to the current FY
+    )
+
+    # Fill NaN values before converting to int
+    merged_data['Financial_Year'] = merged_data['Financial_Year'].fillna(0).astype(int)
+
+
+    # Combine FY and Quarter
+    merged_data['FY_Q_Label'] = 'FY' + merged_data['Financial_Year'].astype(str) + '_' + merged_data['FY_Q']
+
+
+
     
     # Assign SG Rate based on Period_Ending year
     merged_data['SG_Rate'] = np.where(
@@ -91,65 +129,10 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
     # Ensure Period_Ending is in datetime format
     merged_data['Period_Ending'] = pd.to_datetime(merged_data['Period_Ending'])
     
-    # Define aggregation methods for each column
-    agg_methods = {
-        'Full_Name': 'first',  
-        'Pay_Number': 'first',
-        'Line': 'first',
-        'Description_x': 'first',
-        'Hours/Value': 'sum',
-        'Pay_Rate': 'mean',
-        'Total': 'sum',
-        'Cost_Centre': 'first',
-        'Emp_Group': 'first',
-        'PayCode_Type': 'first',
-        'Description_y': 'first',
-        'Type': 'first',
-        'Tax_Status_Income_Category': 'first',
-        'Formula': 'first',
-        'Value': 'sum',
-        'Fixed_Variable': 'first',
-        'Tax_Cert_Status': 'first',
-        'Min_$': 'first',
-        'Max_$': 'first',
-        'Min_Qty': 'first',
-        'Max_Qty': 'first',
-        'Super_on_Pay_Advice': 'first',
-        'Show_rate_on_Pay_Advice': 'first',
-        'Show_YTD_on_Pay_Advice': 'first',
-        'Allow_Data_Entry': 'first',
-        'Multiple_G_L_Dissections': 'first',
-        'Show_on_Pay_Advice': 'first',
-        'Include_in_SG_Threshold': 'first',
-        'Frequency': 'first',
-        'Super_for_Casuals_Under_18': 'first',
-        'Reduce_Hours': 'sum',
-        'Inactive': 'first',
-        'Calculation_Table': 'first',
-        'WCOMP': 'first',
-        'Days_Date': 'first',
-        'Back_Pay': 'sum',
-        'Count_from': 'first',
-        'Disperse_over_Cost_Centres': 'first',
-        'Quarterly_Value_Maximum': 'first',
-        'Monthly_Threshold': 'first',
-        'SG_Rate': 'mean'
-    }
     
-    # Group by Emp.Code, PayCode, and Quarter
-    quarterly_summary = (
-        merged_data
-        .groupby([
-            'Emp.Code', 
-            'PayCode', 
-            pd.Grouper(key='Period_Ending', freq='QE')
-        ])
-        .agg(agg_methods)
-        .reset_index()
-    )
     
-    # Rename for clarity
-    quarterly_summary.rename(columns={'Total': 'Quarterly_Total'}, inplace=True)
+    
+
     
     # Define PayCode lists
     OTE_paycodesBigBoats = [
@@ -163,31 +146,31 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
     ]
     
     # Calculate SG Actuals and Expected
-    quarterly_summary['BigBoats - SG Actuals'] = np.where(
-        quarterly_summary['PayCode'].isin(OTE_paycodesBigBoats),
-        quarterly_summary['Quarterly_Total'] * quarterly_summary['SG_Rate'],
+    merged_data['BigBoats - SG Actuals'] = np.where(
+        merged_data['PayCode'].isin(OTE_paycodesBigBoats),
+        merged_data['Total'] * merged_data['SG_Rate'],
         0
     )
     
-    quarterly_summary['SW Map - SG expected'] = np.where(
-        quarterly_summary['PayCode'].isin(OTE_paycodesSW),
-        quarterly_summary['Quarterly_Total'] * quarterly_summary['SG_Rate'],
+    merged_data['SW Map - SG expected'] = np.where(
+        merged_data['PayCode'].isin(OTE_paycodesSW),
+        merged_data['Total'] * merged_data['SG_Rate'],
         0
     )
     
     # Compute the difference
-    quarterly_summary['Super_Diff'] = (
-        quarterly_summary['SW Map - SG expected'] - quarterly_summary['BigBoats - SG Actuals']
+    merged_data['Super_Diff'] = (
+        merged_data['SW Map - SG expected'] - merged_data['Client - SG Actuals']
     )
     
 
     
     # Save to CSV with dynamic suffix
-    filename = f"quarterly_summary_payroll_{file_suffix}.csv"
-    quarterly_summary.to_csv(filename, index=False)
+    filename = f"payroll_data_{file_suffix}.csv"
+    merged_data.to_csv(filename, index=False)
     print(f"Saved to {filename}")
     
-    return quarterly_summary
+    return merged_data
 
 
 
@@ -196,14 +179,74 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
 payroll_calc(Payroll_Labour_data, combo_Paycodes, file_suffix="LABOUR")
 payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="OFFSHORE")
 
+mergedData_Labour = payroll_calc(Payroll_Labour_data, combo_Paycodes, file_suffix="LABOUR")
+mergedData_Offshore = payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="OFFSHORE")
+
+# # # # Create QTR Results Table lines 357 to
+
+# # Define aggregation methods for each column
+# agg_methods = {
+#         'Full_Name': 'first',  
+#         'Pay_Number': 'first',
+#         'Line': 'first',
+#         'Description_x': 'first',
+#         'Hours/Value': 'sum',
+#         'Pay_Rate': 'mean',
+#         'Total': 'sum',
+#         'Cost_Centre': 'first',
+#         'Emp_Group': 'first',
+#         'PayCode_Type': 'first',
+#         'Description_y': 'first',
+#         'Type': 'first',
+#         'Tax_Status_Income_Category': 'first',
+#         'Formula': 'first',
+#         'Value': 'sum',
+#         'Fixed_Variable': 'first',
+#         'Tax_Cert_Status': 'first',
+#         'Min_$': 'first',
+#         'Max_$': 'first',
+#         'Min_Qty': 'first',
+#         'Max_Qty': 'first',
+#         'Super_on_Pay_Advice': 'first',
+#         'Show_rate_on_Pay_Advice': 'first',
+#         'Show_YTD_on_Pay_Advice': 'first',
+#         'Allow_Data_Entry': 'first',
+#         'Multiple_G_L_Dissections': 'first',
+#         'Show_on_Pay_Advice': 'first',
+#         'Include_in_SG_Threshold': 'first',
+#         'Frequency': 'first',
+#         'Super_for_Casuals_Under_18': 'first',
+#         'Reduce_Hours': 'sum',
+#         'Inactive': 'first',
+#         'Calculation_Table': 'first',
+#         'WCOMP': 'first',
+#         'Days_Date': 'first',
+#         'Back_Pay': 'sum',
+#         'Count_from': 'first',
+#         'Disperse_over_Cost_Centres': 'first',
+#         'Quarterly_Value_Maximum': 'first',
+#         'Monthly_Threshold': 'first',
+#         'SG_Rate': 'mean'
+#     }
+#  # Group by Emp.Code, PayCode, and Quarter
+# quarterly_summary = (
+#         merged_data
+#         .groupby([
+#             'Emp.Code', 
+#             'PayCode', 
+#             pd.Grouper(key='Period_Ending', freq='QE')
+#         ])
+#         .agg(agg_methods)
+#         .reset_index()
+#     )
 
 
-# # # Create QTR Results Table lines 357 to
 
 
+#     # Rename for clarity
+# quarterly_summary.rename(columns={'Total': 'Quarterly_Total'}, inplace=True)
 
-QTR_results_Labour = payroll_calc(Payroll_Labour_data, combo_Paycodes, file_suffix="LABOUR")
-QTR_results_Offshore = payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="OFFSHORE")
+
 
 
 
@@ -234,41 +277,43 @@ QTR_results_Offshore = payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_
 # #     """
 # #     return len(df)
 
-print('QTR Results Labour columns: ')
-print(QTR_results_Labour.columns)
+# print('QTR Results Labour columns: ')
+# print(QTR_results_Labour.columns)
 
 # # # Step 1: Group rows and sum 
 
-QTR_results_Offshore = QTR_results_Offshore[[
-    'Emp.Code', 'PayCode', 'Period_Ending', 'Full_Name', 'Pay_Number',
-    'Line', 'Description_x', 'Hours/Value', 'Pay_Rate', 'Quarterly_Total',
-    # 'Cost_Centre', 'Emp_Group', 'PayCode_Type', 'Description_y', 'Type',
-    # 'Tax_Status_Income_Category', 'Formula', 'Value', 'Fixed_Variable',
-    # 'Tax_Cert_Status', 'Min_$', 'Max_$', 'Min_Qty', 'Max_Qty',
-    # 'Super_on_Pay_Advice', 'Show_rate_on_Pay_Advice',
-    # 'Show_YTD_on_Pay_Advice', 'Allow_Data_Entry',
-    # 'Multiple_G_L_Dissections', 'Show_on_Pay_Advice',
-    # 'Include_in_SG_Threshold', 'Frequency', 'Super_for_Casuals_Under_18',
-    # 'Reduce_Hours', 'Inactive', 'Calculation_Table', 'WCOMP', 'Days_Date',
-    # 'Back_Pay', 'Count_from', 'Disperse_over_Cost_Centres',
-    'Quarterly_Value_Maximum', 'Monthly_Threshold', 'SG_Rate',
-    'BigBoats - SG Actuals', 'SW Map - SG expected', 'Super_Diff'
-]].copy()
+# QTR_results_Offshore = QTR_results_Offshore[[
+#     'Emp.Code', 'PayCode', 'Period_Ending', 'Full_Name', 'Pay_Number',
+#     'Line', 'Description_x', 'Hours/Value', 'Pay_Rate', 'Quarterly_Total',
+#     # 'Cost_Centre', 'Emp_Group', 'PayCode_Type', 'Description_y', 'Type',
+#     # 'Tax_Status_Income_Category', 'Formula', 'Value', 'Fixed_Variable',
+#     # 'Tax_Cert_Status', 'Min_$', 'Max_$', 'Min_Qty', 'Max_Qty',
+#     # 'Super_on_Pay_Advice', 'Show_rate_on_Pay_Advice',
+#     # 'Show_YTD_on_Pay_Advice', 'Allow_Data_Entry',
+#     # 'Multiple_G_L_Dissections', 'Show_on_Pay_Advice',
+#     # 'Include_in_SG_Threshold', 'Frequency', 'Super_for_Casuals_Under_18',
+#     # 'Reduce_Hours', 'Inactive', 'Calculation_Table', 'WCOMP', 'Days_Date',
+#     # 'Back_Pay', 'Count_from', 'Disperse_over_Cost_Centres',
+#     'Quarterly_Value_Maximum', 'Monthly_Threshold', 'SG_Rate',
+#     'BigBoats - SG Actuals', 'SW Map - SG expected', 'Super_Diff'
+# ]].copy()
 
 
 
 
-# # # Step 2:  Add Column MCB
-QTR_results_Offshore['MCB'] = np.where(
-    QTR_results_Offshore['Period_Ending'].dt.year == 2021, 58920, # Need to confirm with Paul or Ollie if this is correct
-    np.where(
-        QTR_results_Offshore['Period_Ending'].dt.year == 2022, 58920,
-        np.where(
-            QTR_results_Offshore['Period_Ending'].dt.year == 2023, 60220,
-            np.where(QTR_results_Offshore['Period_Ending'].dt.year == 2024, 62270, 0)
-        )
-    )
-)
+# # # # Step 2:  Add Column MCB
+# # 2020 - 2021 - $57 090
+
+# QTR_results_Offshore['MCB'] = np.where(
+#     QTR_results_Offshore['Period_Ending'].dt.year == 2021, 58920, # Need to confirm with Paul or Ollie if this is correct
+#     np.where(
+#         QTR_results_Offshore['Period_Ending'].dt.year == 2022, 58920,
+#         np.where(
+#             QTR_results_Offshore['Period_Ending'].dt.year == 2023, 60220,
+#             np.where(QTR_results_Offshore['Period_Ending'].dt.year == 2024, 62270, 0)
+#         )
+#     )
+# )
 
 
 # # row_count = count_rows(Payroll_Period_Code)
