@@ -1,5 +1,6 @@
 import pandas as pd 
 import numpy as np
+import os
 from dataframes import(
     process_income_paycodes,
     process_deduction_paycodes,
@@ -56,7 +57,7 @@ combo_Paycodes = process_combo_paycodes(Combo_Paycodes_filepath)
 
 
 def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OFFSHORE"):
-    global quarterly_summary
+    global merged_data
     merged_data = Payroll_Offshore_data.merge(
         combo_Paycodes,
         how="left",
@@ -113,22 +114,18 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
     
     # Assign SG Rate based on Period_Ending year
     merged_data['SG_Rate'] = np.where(
-        merged_data['Period_Ending'].dt.year == 2021, 0.095,
+        merged_data['Financial_Year'] == 2021, 0.095,
         np.where(
-            merged_data['Period_Ending'].dt.year == 2022, 0.1,
+            merged_data['Financial_Year'] == 2022, 0.1,
             np.where(
-                merged_data['Period_Ending'].dt.year == 2023, 0.105,
+                merged_data['Financial_Year'] == 2023, 0.105,
                 np.where(
-                    merged_data['Period_Ending'].dt.year == 2024, 0.11,
+                    merged_data['Financial_Year'] == 2024, 0.11,
                     0
                 )
             )
         )
     )
-    
-    # Ensure Period_Ending is in datetime format
-    merged_data['Period_Ending'] = pd.to_datetime(merged_data['Period_Ending'])
-    
     
     
     
@@ -146,7 +143,7 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
     ]
     
     # Calculate SG Actuals and Expected
-    merged_data['BigBoats - SG Actuals'] = np.where(
+    merged_data['Client - SG Actuals'] = np.where(
         merged_data['PayCode'].isin(OTE_paycodesBigBoats),
         merged_data['Total'] * merged_data['SG_Rate'],
         0
@@ -162,13 +159,32 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
     merged_data['Super_Diff'] = (
         merged_data['SW Map - SG expected'] - merged_data['Client - SG Actuals']
     )
+
+    merged_data['QtrEMPLID'] = merged_data['Emp.Code'].astype(str) + '_' + merged_data['FY_Q_Label']
     
+    # Define the desired column order
+    column_order = [
+        'QtrEMPLID', 'Period_Ending', 'FY_Q', 'Financial_Year', 'FY_Q_Label',  # New columns placed after 'Period_Ending'
+        'Emp.Code', 'Full_Name', 'Pay_Number', 'Line', 'PayCode', 'Description_x', 'Hours/Value', 
+        'Pay_Rate', 'Total', 'Cost_Centre', 'Emp_Group', 'PayCode_Type', 'Description_y', 'Type',
+        'Tax_Status_Income_Category', 'Formula', 'Value', 'Fixed_Variable', 'Tax_Cert_Status', 'Min_$', 
+        'Max_$', 'Min_Qty', 'Max_Qty', 'Super_on_Pay_Advice', 'Show_rate_on_Pay_Advice',
+        'Show_YTD_on_Pay_Advice', 'Allow_Data_Entry', 'Multiple_G_L_Dissections', 'Show_on_Pay_Advice',
+        'Include_in_SG_Threshold', 'Frequency', 'Super_for_Casuals_Under_18', 'Reduce_Hours', 'Inactive',
+        'Calculation_Table', 'WCOMP', 'Days_Date', 'Back_Pay', 'Count_from', 'Disperse_over_Cost_Centres',
+        'Quarterly_Value_Maximum', 'Monthly_Threshold', 'SG_Rate', 'Client - SG Actuals',
+        'SW Map - SG expected', 'Super_Diff'
+    ]
+
+    # Reorder the DataFrame columns
+    merged_data = merged_data[column_order]
 
     
     # Save to CSV with dynamic suffix
     filename = f"payroll_data_{file_suffix}.csv"
     merged_data.to_csv(filename, index=False)
     print(f"Saved to {filename}")
+
     
     return merged_data
 
@@ -183,69 +199,166 @@ mergedData_Labour = payroll_calc(Payroll_Labour_data, combo_Paycodes, file_suffi
 mergedData_Offshore = payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="OFFSHORE")
 
 # # # # Create QTR Results Table lines 357 to
+import os
+import pandas as pd
 
-# # Define aggregation methods for each column
-# agg_methods = {
-#         'Full_Name': 'first',  
-#         'Pay_Number': 'first',
-#         'Line': 'first',
-#         'Description_x': 'first',
-#         'Hours/Value': 'sum',
-#         'Pay_Rate': 'mean',
-#         'Total': 'sum',
-#         'Cost_Centre': 'first',
-#         'Emp_Group': 'first',
-#         'PayCode_Type': 'first',
-#         'Description_y': 'first',
-#         'Type': 'first',
-#         'Tax_Status_Income_Category': 'first',
-#         'Formula': 'first',
-#         'Value': 'sum',
-#         'Fixed_Variable': 'first',
-#         'Tax_Cert_Status': 'first',
-#         'Min_$': 'first',
-#         'Max_$': 'first',
-#         'Min_Qty': 'first',
-#         'Max_Qty': 'first',
-#         'Super_on_Pay_Advice': 'first',
-#         'Show_rate_on_Pay_Advice': 'first',
-#         'Show_YTD_on_Pay_Advice': 'first',
-#         'Allow_Data_Entry': 'first',
-#         'Multiple_G_L_Dissections': 'first',
-#         'Show_on_Pay_Advice': 'first',
-#         'Include_in_SG_Threshold': 'first',
-#         'Frequency': 'first',
-#         'Super_for_Casuals_Under_18': 'first',
-#         'Reduce_Hours': 'sum',
-#         'Inactive': 'first',
-#         'Calculation_Table': 'first',
-#         'WCOMP': 'first',
-#         'Days_Date': 'first',
-#         'Back_Pay': 'sum',
-#         'Count_from': 'first',
-#         'Disperse_over_Cost_Centres': 'first',
-#         'Quarterly_Value_Maximum': 'first',
-#         'Monthly_Threshold': 'first',
-#         'SG_Rate': 'mean'
-#     }
-#  # Group by Emp.Code, PayCode, and Quarter
-# quarterly_summary = (
-#         merged_data
-#         .groupby([
-#             'Emp.Code', 
-#             'PayCode', 
-#             pd.Grouper(key='Period_Ending', freq='QE')
-#         ])
-#         .agg(agg_methods)
-#         .reset_index()
-#     )
+def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
+    """
+    Aggregates payroll data by employee code, pay code, and fiscal quarter,
+    then saves the output as a CSV file.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame containing payroll data.
+    output_dir (str): Directory where the output CSV should be saved.
+    file_suffix (str): Suffix to differentiate output files.
+
+    Returns:
+    pd.DataFrame: Aggregated quarterly payroll summary.
+    """
+
+    # Define aggregation methods
+    agg_methods = {
+        'Full_Name': 'first',  
+        'Pay_Number': 'first',
+        'Line': 'first',
+        'Description_x': 'first',
+        'Hours/Value': 'sum',
+        'Pay_Rate': 'mean',
+        'Total': 'sum',
+        'Cost_Centre': 'first',
+        'Emp_Group': 'first',
+        'PayCode_Type': 'first',
+        'Description_y': 'first',
+        'Type': 'first',
+        'Tax_Status_Income_Category': 'first',
+        'Formula': 'first',
+        'Value': 'sum',
+        'Fixed_Variable': 'first',
+        'Tax_Cert_Status': 'first',
+        'Min_$': 'first',
+        'Max_$': 'first',
+        'Min_Qty': 'first',
+        'Max_Qty': 'first',
+        'Super_on_Pay_Advice': 'first',
+        'Show_rate_on_Pay_Advice': 'first',
+        'Show_YTD_on_Pay_Advice': 'first',
+        'Allow_Data_Entry': 'first',
+        'Multiple_G_L_Dissections': 'first',
+        'Show_on_Pay_Advice': 'first',
+        'Include_in_SG_Threshold': 'first',
+        'Frequency': 'first',
+        'Super_for_Casuals_Under_18': 'first',
+        'Reduce_Hours': 'sum',
+        'Inactive': 'first',
+        'Calculation_Table': 'first',
+        'WCOMP': 'first',
+        'Days_Date': 'first',
+        'Back_Pay': 'sum',
+        'Count_from': 'first',
+        'Disperse_over_Cost_Centres': 'first',
+        'Quarterly_Value_Maximum': 'first',
+        'Monthly_Threshold': 'first',
+        'SG_Rate': 'mean',
+        #'QtrEMPLID': 'first',  
+        'FY_Q': 'first',
+        'Financial_Year': 'first',
+        #'FY_Q_Label': 'first' 
+        'Client - SG Actuals' : 'sum',
+        'SW Map - SG expected': 'sum', 
+        'Super_Diff' : 'sum'
+    }
+
+    # Ensure required columns exist in DataFrame before aggregating
+    existing_columns = df.columns.intersection(agg_methods.keys())
+    agg_methods = {col: agg_methods[col] for col in existing_columns}
+
+    # Ensure the required group-by columns exist
+    group_by_columns = ['QtrEMPLID', 'FY_Q_Label', 'Emp.Code', 'PayCode']
+    missing_cols = [col for col in group_by_columns if col not in df.columns]
+
+    if missing_cols:
+        raise ValueError(f"Missing columns in DataFrame: {missing_cols}")
+
+    # Perform aggregation
+    quarterly_summary = (
+        df
+        .groupby(group_by_columns)
+        .agg(agg_methods)
+        .reset_index()
+    )
+
+
+    columns_to_drop = ['Period_Ending',   
+        'Pay_Number', 'Line', 'Hours/Value', 
+        'Cost_Centre', 'Emp_Group', 'PayCode_Type', 'Description_y', 'Type',
+        'Tax_Status_Income_Category', 'Formula', 'Value', 'Fixed_Variable', 'Tax_Cert_Status', 'Min_$', 
+        'Max_$', 'Min_Qty', 'Max_Qty', 'Super_on_Pay_Advice', 'Show_rate_on_Pay_Advice',
+        'Show_YTD_on_Pay_Advice', 'Allow_Data_Entry', 'Multiple_G_L_Dissections', 'Show_on_Pay_Advice',
+        'Include_in_SG_Threshold', 'Frequency', 'Super_for_Casuals_Under_18', 'Reduce_Hours', 'Inactive',
+        'Calculation_Table', 'WCOMP', 'Days_Date', 'Back_Pay', 'Count_from', 'Disperse_over_Cost_Centres',
+        'Quarterly_Value_Maximum', 'Monthly_Threshold']
+
+     # Drop unneeded columns if provided
+   
+    quarterly_summary = quarterly_summary.drop(columns=columns_to_drop, errors='ignore')  # ignore errors if columns don't exist
+
+    
+    # # # Step 2:  Add Column MCB
+    # 2020 - 2021 - $57 090
+
+    quarterly_summary['MCB'] = np.where(
+        quarterly_summary['Financial_Year'] == 2021, 57090, # Need to confirm with Paul or Ollie if this is correct
+        np.where(
+            quarterly_summary['Financial_Year'] == 2022, 58920,
+            np.where(
+                quarterly_summary['Financial_Year'] == 2023, 60220,
+                np.where(quarterly_summary['Financial_Year']  == 2024, 62270, 
+                         
+              0)
+            )
+        )
+    )
+
+
+    OTE_paycodesClient = [
+        "NORMAL", "CASBNS", "PH", "AL", "SL", "TAFE", "WCOMP-EX", "HRSBNS", 
+        "AL-CASHO", "BEREAVE", "PL-VACC", "VEHICLE", "BACK", "MVGARTH", "BONUS"
+    ]
+
+    OTE_paycodesSW = [
+        "NORMAL", "CASBNS", "PH", "AL", "SL", "HRSBNS", "AL-CASHO", "BEREAVE", 
+        "PL-VACC", "LOADING", "MEAL4", "BACK", "MVGARTH", "LOAD", "MEAL", "BONUS"
+    ]
+
+    quarterly_summary['SystemOTEAmount'] = np.where(
+        quarterly_summary['PayCode'].isin(OTE_paycodesClient),
+        quarterly_summary['Total'], 0
+    )
+
+    quarterly_summary['OTEAmount'] = np.where(
+        quarterly_summary['PayCode'].isin(OTE_paycodesSW),
+        quarterly_summary['Total'], 0
+    )
+
+
+    
+
+
+    # Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Define output file path
+    filename = os.path.join(output_dir, f"Quarterly_payroll_data_{file_suffix}.csv")
+
+    # Save to CSV
+    quarterly_summary.to_csv(filename, index=False)
+
+    print(f"File saved: {filename}")
+    return quarterly_summary
 
 
 
-
-#     # Rename for clarity
-# quarterly_summary.rename(columns={'Total': 'Quarterly_Total'}, inplace=True)
-
+quarterly_summary = aggregate_quarterly_data(mergedData_Labour)
 
 
 
