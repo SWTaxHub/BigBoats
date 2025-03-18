@@ -341,7 +341,31 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     )
 
 
-    
+    quarterly_summary['SW - Exepected Minimum SG'] = np.where(
+    quarterly_summary['OTEAmount'] > quarterly_summary['MCB'],
+    quarterly_summary['MCB'] * quarterly_summary['SG_Rate'], np.where(
+       quarterly_summary['OTEAmount']  < quarterly_summary['MCB'], 
+       quarterly_summary['OTEAmount'] * quarterly_summary['SG_Rate'],
+       0 
+        )
+    )
+
+
+
+    # Add Column Client - Expected Minimum SG
+
+    quarterly_summary['Client - Exepected Minimum SG'] = np.where(
+    quarterly_summary['SystemOTEAmount'] > quarterly_summary['MCB'],
+    quarterly_summary['MCB'] * quarterly_summary['SG_Rate'], np.where(
+       quarterly_summary['SystemOTEAmount']  < quarterly_summary['MCB'], 
+       quarterly_summary['SystemOTEAmount'] * quarterly_summary['SG_Rate'],
+       0 
+        )
+    )
+
+
+   
+
 
 
     # Ensure the output directory exists
@@ -360,7 +384,7 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
 
 quarterly_summary = aggregate_quarterly_data(mergedData_Labour)
 
-
+ 
 
 
 # # Payroll_Period_Code =  merged_data
@@ -469,27 +493,7 @@ quarterly_summary = aggregate_quarterly_data(mergedData_Labour)
 # # #   )
 
 
-# # Payroll_Period_Code['SW Map expected Additional SG'] = np.where(
-# #   Payroll_Period_Code['SW - OTE'] > Payroll_Period_Code['MCB'], 
-# #     Payroll_Period_Code['MCB'] * Payroll_Period_Code['Additional Super Rate'],
-# #     np.where(
-# #       Payroll_Period_Code['SW - OTE'] < Payroll_Period_Code['MCB'],
-# #       Payroll_Period_Code['SW - OTE'] * Payroll_Period_Code['Additional Super Rate'],
-# #       0
-# #     )
-# # )
 
-# # row_count = count_rows(Payroll_Period_Code)
-# # print(f"The DataFrame has {row_count} rows after Step 4.")
-
-# # # Step 5: Add column SW Map - total expected SG
-
-# # # = Table.AddColumn(#"Added Custom -SW Map - expected Minimum SG", "SW Map - expected Additional SG", each let 
-# # #     Total = [#"SW - OTE"] 
-# # #   in
-# # #     if Total > [MCB] then [MCB]*[Additional Super Rate]
-# # #     else if Total < [MCB] then Total*[Additional Super Rate]
-# # #     else 0, type number)
 
 
 # # Payroll_Period_Code['SW Map - total expected SG'] = Payroll_Period_Code['SW Map - expected Minimum SG'] +  Payroll_Period_Code['SW Map expected Additional SG']
@@ -530,9 +534,6 @@ quarterly_summary = aggregate_quarterly_data(mergedData_Labour)
 
 
 
-
-# # # Step 8: Add Column FLOUR Map - Expected Total SG
-# # Payroll_Period_Code['FLOUR Map - Expected Total SG'] = Payroll_Period_Code['FLOUR Map - expected Minimum SG'] + Payroll_Period_Code['FLOUR Map - expected Additional SG']
 
 
 # # row_count = count_rows(Payroll_Period_Code)
