@@ -143,6 +143,14 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
     ]
 
 
+    # Get all unique values from both lists
+    unique_paycodes = list(set(OTE_paycodesBigBoats + OTE_paycodesSW))
+
+    # Print the result
+    print('unique_paycodes')
+    print(unique_paycodes)
+
+
     merged_data['Client Mapping'] = np.where(
          merged_data['PayCode'].isin(OTE_paycodesBigBoats),
         'Y',
@@ -268,6 +276,130 @@ payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="OFFSHORE")
 
 mergedData_Labour = payroll_calc(Payroll_Labour_data, combo_Paycodes, file_suffix="LABOUR")
 mergedData_Offshore = payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="OFFSHORE")
+
+
+# def pivot_table(df, output_dir="output", file_suffix="LABOUR"):
+
+
+#     # Define the columns to keep
+#     index_columns = ['QtrEMPLID', 'FY_Q_Label', 'Emp.Code', 'FY_Q', 'Financial_Year', 
+#                     'Full_Name', 'Pay_Number', 'Line']
+
+
+#     unique_paycodes = ['PL-VACC', 'WCOMP-EX', 'HRSBNS', 'LOAD', 'SL', 'BEREAVE', 'NORMAL', 
+#      'PH', 'TAFE', 'CASBNS', 'BONUS', 'AL', 'MEAL', 'LOADING', 'VEHICLE', 
+#      'MVGARTH', 'AL-CASHO', 'BACK', 'MEAL4']
+    
+
+
+#     # First, filter the DataFrame to only include rows with PayCodes in your list
+#     filtered_df = df[df['PayCode'].isin(unique_paycodes)]
+
+#     # Pivot the table using PayCode values as columns
+#     df_pivot = filtered_df.pivot_table(
+#         index=index_columns,
+#         columns='PayCode',
+#         values='Total',     # Or ['Total', 'Hours/Value'] if you want multiple
+#         aggfunc='sum'
+#     ).reset_index()
+
+#     # Flatten the MultiIndex columns (if needed)
+#     df_pivot.columns.name = None  # remove the pivoted column name (PayCode)
+#     df_pivot.columns = [str(col) for col in df_pivot.columns]
+
+#     # Display the result
+#     print(df_pivot.head())
+
+
+#         # Flatten MultiIndex columns
+#     #df_pivot.columns = ['_'.join(col).strip('_') for col in df_pivot.columns.values]
+
+
+#      # Ensure the output directory exists
+#     os.makedirs(output_dir, exist_ok=True)
+
+#     # Define output file path
+#     filename = os.path.join(output_dir, f"Pivot_Test_{file_suffix}.csv")
+
+#     # Save to CSV
+#     df_pivot.to_csv(filename, index=False)
+
+#     print(f"File saved: {filename}")
+
+#     return df_pivot
+
+
+import os
+import pandas as pd
+
+def pivot_table(df, output_dir="output", file_suffix="LABOUR"):
+    # Define the columns to keep as index
+    index_columns = ['QtrEMPLID', 'FY_Q_Label', 'Emp.Code', 'FY_Q', 'Financial_Year', 
+                     'Full_Name', 'Pay_Number', 'Line']
+
+    # Define unique PayCodes to pivot
+    unique_paycodes = [
+        'PL-VACC', 'WCOMP-EX', 'HRSBNS', 'LOAD', 'SL', 'BEREAVE', 'NORMAL', 
+        'PH', 'TAFE', 'CASBNS', 'BONUS', 'AL', 'MEAL', 'LOADING', 'VEHICLE', 
+        'MVGARTH', 'AL-CASHO', 'BACK', 'MEAL4'
+    ]
+
+    # ✅ Preserve original dataframe structure
+    original_columns = df.columns.tolist()
+
+    # 🔹 Pivoting the table using PayCode values as columns
+    df_pivot = df.pivot_table(
+        index=index_columns,
+        columns='PayCode',
+        values='Total',  # You can include multiple like ['Total', 'Hours/Value']
+        aggfunc='sum'
+    ).reset_index()
+
+    # 🔹 Flatten MultiIndex columns if needed
+    df_pivot.columns.name = None  # Remove the 'PayCode' level
+    df_pivot.columns = [str(col) for col in df_pivot.columns]
+
+
+    # 🔹 Merge the pivoted data back to the original dataset
+    df_merged = df.drop(columns=['Total']).drop_duplicates()  # Remove 'Total' before merging to avoid conflicts
+    df_final = df_merged.merge(df_pivot, on=index_columns, how='left')
+
+
+    # Keep only the required columns (index columns + unique PayCodes)
+    final_columns = index_columns + unique_paycodes
+    df_final = df_pivot.loc[:, df_pivot.columns.isin(final_columns)]
+
+    print('Df_final: ')
+    print(df_final.columns)
+
+    unique_paycodes_reduced = ['AL', 'AL-CASHO', 'BEREAVE',
+       'CASBNS', 'HRSBNS', 'LOAD', 'LOADING', 'MEAL', 'MEAL4', 'NORMAL', 'PH',
+       'PL-VACC', 'SL', 'TAFE', 'VEHICLE', 'WCOMP-EX']
+
+  # ✅ Drop rows where all unique_paycodes are blank (NaN or 0)
+    df_final = df_final.dropna(subset=unique_paycodes_reduced, how='all')  
+    df_final = df_final.loc[~(df_final[unique_paycodes_reduced].fillna(0) == 0).all(axis=1)]  
+
+
+    # 🔹 Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 🔹 Define output file path
+    filename = os.path.join(output_dir, f"Pivot_Test_{file_suffix}.csv")
+
+    # 🔹 Save to CSV
+    df_final.to_csv(filename, index=False)
+
+    print(f"✅ File saved: {filename}")
+
+    return df_final
+
+
+
+
+pivot_table(mergedData_Labour, file_suffix='LABOUR')
+
+
 
 # # # # Create QTR Results Table lines 357 to
 
@@ -406,9 +538,6 @@ quarterly_summary = aggregate_quarterly_data(mergedData_Labour)
 
  
 
-
-import os
-import pandas as pd
 
 def SG_actual_Vs_SW_Map(df, output_dir="output", file_suffix="LABOUR"):
     # Define aggregation methods
