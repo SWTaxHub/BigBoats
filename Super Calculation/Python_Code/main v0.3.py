@@ -247,7 +247,7 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
    
     merged_data = merged_data.drop(columns=columns_to_drop, errors='ignore')  # ignore errors if columns don't exist
 
-    
+    merged_data = merged_data.rename(columns={'Description_x': 'Description'})
 
 
     
@@ -290,48 +290,13 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         'Full_Name': 'first',  
         'Pay_Number': 'first',
         'Line': 'first',
-        'Description_x': 'first',
+        'Description': 'first',
         'Hours/Value': 'sum',
         'Pay_Rate': 'mean',
         'Total': 'sum',
-        # 'Cost_Centre': 'first',
-        # 'Emp_Group': 'first',
-        # 'PayCode_Type': 'first',
-        # 'Description_y': 'first',
-        # 'Type': 'first',
-        # 'Tax_Status_Income_Category': 'first',
-        # 'Formula': 'first',
-        # 'Value': 'sum',
-        # 'Fixed_Variable': 'first',
-        # 'Tax_Cert_Status': 'first',
-        # 'Min_$': 'first',
-        # 'Max_$': 'first',
-        # 'Min_Qty': 'first',
-        # 'Max_Qty': 'first',
-        # 'Super_on_Pay_Advice': 'first',
-        # 'Show_rate_on_Pay_Advice': 'first',
-        # 'Show_YTD_on_Pay_Advice': 'first',
-        # 'Allow_Data_Entry': 'first',
-        # 'Multiple_G_L_Dissections': 'first',
-        # 'Show_on_Pay_Advice': 'first',
-        # 'Include_in_SG_Threshold': 'first',
-        # 'Frequency': 'first',
-        # 'Super_for_Casuals_Under_18': 'first',
-        # 'Reduce_Hours': 'sum',
-        # 'Inactive': 'first',
-        # 'Calculation_Table': 'first',
-        # 'WCOMP': 'first',
-        # 'Days_Date': 'first',
-        # 'Back_Pay': 'sum',
-        # 'Count_from': 'first',
-        # 'Disperse_over_Cost_Centres': 'first',
-        # 'Quarterly_Value_Maximum': 'first',
-        # 'Monthly_Threshold': 'first',
         'SG_Rate': 'mean',
-        #'QtrEMPLID': 'first',  
         'FY_Q': 'first',
-        'Financial_Year': 'first',
-        #'FY_Q_Label': 'first' 
+        'Financial_Year': 'first', 
        'Client Mapping' : 'first',
         'SW mapping' : 'first',
         'Client mapping - OTE' : 'sum',
@@ -342,7 +307,6 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         'SW Map - S&W SG' : 'sum',
         'Payroll - actual SG paid' : 'sum', 
         'SCH - actual SG received' : 'sum'
-        #'Super_Diff' : 'sum'
     }
 
     # Ensure required columns exist in DataFrame before aggregating
@@ -363,17 +327,8 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         .agg(agg_methods)
         .reset_index()
     )
+    
 
-
-    # columns_to_drop = ['Period_Ending',   
-    #     'Pay_Number', 'Line', 'Hours/Value', 
-    #     'Cost_Centre', 'Emp_Group', 'PayCode_Type', 'Description_y', 'Type',
-    #     'Tax_Status_Income_Category', 'Formula', 'Value', 'Fixed_Variable', 'Tax_Cert_Status', 'Min_$', 
-    #     'Max_$', 'Min_Qty', 'Max_Qty', 'Super_on_Pay_Advice', 'Show_rate_on_Pay_Advice',
-    #     'Show_YTD_on_Pay_Advice', 'Allow_Data_Entry', 'Multiple_G_L_Dissections', 'Show_on_Pay_Advice',
-    #     'Include_in_SG_Threshold', 'Frequency', 'Super_for_Casuals_Under_18', 'Reduce_Hours', 'Inactive',
-    #     'Calculation_Table', 'WCOMP', 'Days_Date', 'Back_Pay', 'Count_from', 'Disperse_over_Cost_Centres',
-    #     'Quarterly_Value_Maximum', 'Monthly_Threshold']
 
      # Drop unneeded columns if provided
    
@@ -397,28 +352,6 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     )
 
 
-    OTE_paycodesClient = [
-        "NORMAL", "CASBNS", "PH", "AL", "SL", "TAFE", "WCOMP-EX", "HRSBNS", 
-        "AL-CASHO", "BEREAVE", "PL-VACC", "VEHICLE", "BACK", "MVGARTH", "BONUS"
-    ]
-
-    OTE_paycodesSW = [
-        "NORMAL", "CASBNS", "PH", "AL", "SL", "HRSBNS", "AL-CASHO", "BEREAVE", 
-        "PL-VACC", "LOADING", "MEAL4", "BACK", "MVGARTH", "LOAD", "MEAL", "BONUS"
-    ]
-
-    quarterly_summary['SystemOTEAmount'] = np.where(
-        quarterly_summary['PayCode'].isin(OTE_paycodesClient),
-        quarterly_summary['Total'], 0
-    )
-
-    quarterly_summary['OTEAmount'] = np.where(
-        quarterly_summary['PayCode'].isin(OTE_paycodesSW),
-        quarterly_summary['Total'], 0
-    )
-
-
-
 
     # Where Paycode is in list 1 & is not in list 2
     # Return Y
@@ -428,10 +361,10 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
 
 
     quarterly_summary['SW - Exepected Minimum SG'] = np.where(
-    quarterly_summary['OTEAmount'] > quarterly_summary['MCB'],
+    quarterly_summary['SW Mapping - OTE'] > quarterly_summary['MCB'],
     quarterly_summary['MCB'] * quarterly_summary['SG_Rate'], np.where(
-       quarterly_summary['OTEAmount']  < quarterly_summary['MCB'], 
-       quarterly_summary['OTEAmount'] * quarterly_summary['SG_Rate'],
+       quarterly_summary['SW Mapping - OTE']  < quarterly_summary['MCB'], 
+       quarterly_summary['SW Mapping - OTE'] * quarterly_summary['SG_Rate'],
        0 
         )
     )
@@ -441,10 +374,10 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     # Add Column Client - Expected Minimum SG
 
     quarterly_summary['Client - Exepected Minimum SG'] = np.where(
-    quarterly_summary['SystemOTEAmount'] > quarterly_summary['MCB'],
+    quarterly_summary['Client mapping - OTE'] > quarterly_summary['MCB'],
     quarterly_summary['MCB'] * quarterly_summary['SG_Rate'], np.where(
-       quarterly_summary['SystemOTEAmount']  < quarterly_summary['MCB'], 
-       quarterly_summary['SystemOTEAmount'] * quarterly_summary['SG_Rate'],
+       quarterly_summary['Client mapping - OTE']  < quarterly_summary['MCB'], 
+       quarterly_summary['Client mapping - OTE'] * quarterly_summary['SG_Rate'],
        0 
         )
     )
@@ -472,6 +405,98 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
 quarterly_summary = aggregate_quarterly_data(mergedData_Labour)
 
  
+
+
+import os
+import pandas as pd
+
+def SG_actual_Vs_SW_Map(df, output_dir="output", file_suffix="LABOUR"):
+    # Define aggregation methods
+    agg_methods = {\
+        'Emp.Code' : 'first',
+        'Full_Name': 'first',  
+        'Pay_Number': 'first',
+        'Line': 'first',
+        'Hours/Value': 'sum',
+        'Pay_Rate': 'mean',
+        'Total': 'sum',
+        'SG_Rate': 'mean',
+        'FY_Q': 'first',
+        'Financial_Year': 'first', 
+        'Client Mapping': 'first',
+        'SW mapping': 'first',
+        'Client mapping - OTE': 'sum',
+        'SW Mapping - OTE': 'sum',
+        'SW Mapping - S&W': 'sum',
+        'Client Mapping - OTE SG Expected': 'sum',
+        'SW Map - OTE SG expected': 'sum', 
+        'SW Map - S&W SG': 'sum',
+        'Payroll - actual SG paid': 'sum', 
+        'SCH - actual SG received': 'sum',
+        'MCB' : 'first',
+
+    }
+
+    # Check if required columns exist in DataFrame
+    group_by_columns = ['QtrEMPLID']
+    missing_cols = [col for col in group_by_columns if col not in df.columns]
+
+    if missing_cols:
+        raise ValueError(f"Missing columns in DataFrame: {missing_cols}")
+
+    # Perform aggregation
+    grouped_df = df.groupby(group_by_columns).agg(agg_methods).reset_index()
+
+
+    columns_to_drop = ['Description', 'Client Mapping', 'SW mapping']
+
+     # Drop unneeded columns if provided
+   
+    grouped_df = grouped_df.drop(columns=columns_to_drop, errors='ignore')  # ignore errors if columns don't exist
+
+
+
+    grouped_df['SW - Exepected Minimum SG'] = np.where(
+    grouped_df['SW Mapping - OTE'] > grouped_df['MCB'],
+    grouped_df['MCB'] * grouped_df['SG_Rate'], np.where(
+       grouped_df['SW Mapping - OTE']  < grouped_df['MCB'], 
+       grouped_df['SW Mapping - OTE'] * grouped_df['SG_Rate'],
+       0 
+        )
+    )
+
+
+
+    # Add Column Client - Expected Minimum SG
+
+    grouped_df['Client - Exepected Minimum SG'] = np.where(
+    grouped_df['Client mapping - OTE'] > grouped_df['MCB'],
+    grouped_df['MCB'] * grouped_df['SG_Rate'], np.where(
+       grouped_df['Client mapping - OTE']  < grouped_df['MCB'], 
+       grouped_df['Client mapping - OTE'] * grouped_df['SG_Rate'],
+       0 
+        )
+    )
+
+
+    grouped_df['Payroll_Vs_SW_Expected_Min_SG'] = grouped_df['Payroll - actual SG paid'] - grouped_df['SW - Exepected Minimum SG']
+
+    grouped_df['Payroll_Vs_Client_Expected_Min_SG'] = grouped_df['Payroll - actual SG paid'] - grouped_df['Client - Exepected Minimum SG']
+
+    # Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Define output file path
+    filename = os.path.join(output_dir, f"SG_actual_Vs_SW_Map_{file_suffix}.csv")
+
+    # Save to CSV
+    grouped_df.to_csv(filename, index=False)
+
+    print(f"File saved: {filename}")
+    return grouped_df
+
+# Call the function with your DataFrame
+result_df = SG_actual_Vs_SW_Map(quarterly_summary, file_suffix='LABOUR')
 
 
 # # Payroll_Period_Code =  merged_data

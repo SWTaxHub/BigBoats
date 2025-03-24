@@ -1,4 +1,4 @@
-QtrEMPLID,Period_Ending,FY_Q,Financial_Year,FY_Q_Label,Emp.Code,Full_Name,Pay_Number,Line,PayCode,Description_x,Hours/Value,Pay_Rate,Total,SG_Rate,Client Mapping,SW mapping,Client mapping - OTE,SW Mapping - OTE,SW Mapping - S&W,Client Mapping - OTE SG Expected,SW Map - OTE SG expected,SW Map - S&W SG,Payroll - actual SG paid,SCH - actual SG received
+QtrEMPLID,Period_Ending,FY_Q,Financial_Year,FY_Q_Label,Emp.Code,Full_Name,Pay_Number,Line,PayCode,Description,Hours/Value,Pay_Rate,Total,SG_Rate,Client Mapping,SW mapping,Client mapping - OTE,SW Mapping - OTE,SW Mapping - S&W,Client Mapping - OTE SG Expected,SW Map - OTE SG expected,SW Map - S&W SG,Payroll - actual SG paid,SCH - actual SG received
 CANP_FY2022_Q1,2021-07-31,Q1,2022,FY2022_Q1,CANP,PHILIP CANDLER,9930,N,NORMAL,Normal,164.67,75.9109,12500.25,0.1,Y,OTE,12500.25,12500.25,0.0,1250.025,1250.025,0.0,0.0,0
 CANP_FY2022_Q1,2021-07-31,Q1,2022,FY2022_Q1,CANP,PHILIP CANDLER,9930,A,CAR,Car Allowance,,,1250.0,0.1,N,S&W,0.0,0.0,1250.0,0.0,0.0,125.0,0.0,0
 CANP_FY2022_Q1,2021-07-31,Q1,2022,FY2022_Q1,CANP,PHILIP CANDLER,9930,T,NORMTAX,Tax,,,3636.0,0.1,N,S&W,0.0,0.0,3636.0,0.0,0.0,363.6,0.0,0
