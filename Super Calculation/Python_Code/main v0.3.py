@@ -209,7 +209,7 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
 
     merged_data['Payroll - actual SG paid'] = np.where(
         merged_data['PayCode'].isin(super_codes),
-        merged_data['Total'] * merged_data['SG_Rate'],
+        merged_data['Total'], 
         0
     )
 
@@ -278,126 +278,225 @@ mergedData_Labour = payroll_calc(Payroll_Labour_data, combo_Paycodes, file_suffi
 mergedData_Offshore = payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="OFFSHORE")
 
 
+print(mergedData_Labour.columns)
+
+
+agg_methods = {
+        'Full_Name': 'first',  
+        'Line': 'first',
+        'Description': 'first',
+        'Hours/Value': 'sum',
+        'Pay_Rate': 'mean',
+        'Total': 'sum',
+        'SG_Rate': 'mean',
+        'FY_Q': 'first',
+        'Financial_Year': 'first', 
+       'Client Mapping' : 'first',
+        'SW mapping' : 'first',
+        'Client mapping - OTE' : 'sum',
+        'SW Mapping - OTE' : 'sum',
+        'SW Mapping - S&W' : 'sum',
+        'Client Mapping - OTE SG Expected' : 'sum',
+        'SW Map - OTE SG expected' : 'sum' , 
+        'SW Map - S&W SG' : 'sum',
+        'Payroll - actual SG paid' : 'sum', 
+        'SCH - actual SG received' : 'sum'
+    }
+
+
+
+
+df1 =  mergedData_Labour.groupby(['Period_Ending', 'Pay_Number', 'Emp.Code']).agg(agg_methods).reset_index()
+
+df1 = df1.sort_values(by=['Emp.Code', 'Period_Ending'])  # Ensure chronological order
+
+
+print(df1.columns)
+
+
+df1['SW Map - OTE SG expected'] = df1['SW Map - OTE SG expected'].round(2)
+
+df1['Shortfall SG'] = df1['Payroll - actual SG paid'] - df1['SW Map - OTE SG expected']
+
+df1['clumative_sum'] = df1.groupby(['Emp.Code'])['Shortfall SG'].cumsum()
+
+
+
+
+
+
+
+df1['cumulative_sum_12Months'] = df1.groupby('Emp.Code').apply(
+    lambda g: g.apply(
+        lambda row: g.loc[
+            (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &
+            (g['Period_Ending'] <= row['Period_Ending']),
+            'Shortfall SG'
+        ].sum(), 
+        axis=1
+    )
+).reset_index(level=0, drop=True)
+
+
+
+
+
+df1 = df1.sort_values(by=['Emp.Code', 'Period_Ending'])  # Ensure chronological order
+
+# Cum sum for under payments should not be bound by 12 months but should be a running total
+
+
+
+# df1['cumulative_sum_12Months_UNDERPAY'] = df1.groupby('Emp.Code').apply(
+#     lambda g: g.apply(
+#         lambda row: g.loc[
+#             (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &  # Only past 12 months
+#             (g['Period_Ending'] <= row['Period_Ending']) &  # Up to current row’s Period_Ending
+#             (g['Shortfall SG'] < -0.01),  # Only consider Negative values
+#             'Shortfall SG'
+#         ].sum(), 
+#         axis=1
+#     )
+# ).reset_index(level=0, drop=True)
+
+
+df1['cumulative_sum_12Months_OVERPAY'] = df1.groupby('Emp.Code').apply(
+    lambda g: g.apply(
+        lambda row: g.loc[
+            (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &  # Only past 12 months
+            (g['Period_Ending'] <= row['Period_Ending']) &  # Up to current row’s Period_Ending
+            (g['Shortfall SG'] > 0.01),  # Only consider positive values
+            'Shortfall SG'
+        ].sum(), 
+        axis=1
+    )
+).reset_index(level=0, drop=True)
+
+
+# df1['Total_cum_sum'] = df1['cumulative_sum_12Months_UNDERPAY'] + df1['cumulative_sum_12Months_OVERPAY']
+
+
+
+
+df1['Adjust_shortfall_Y/N'] = np.where(
+    (df1['Shortfall SG'] < 0) & (df1['cumulative_sum_12Months_OVERPAY'] > 0), 'Y', 'N'
+)
+
+
+
+# Step 1: Compute Pot_of_Gold where Adjust_shortfall_Y/N is 'Y'
+df1['Available_Balance'] = np.where(
+    df1['Adjust_shortfall_Y/N'] == 'Y', 
+    df1['cumulative_sum_12Months'],
+    np.nan  # Set others as NaN for now
+)
+
+# Step 2: Forward fill within each Emp.Code group to propagate last value
+df1['Available_Balance'] = df1.groupby('Emp.Code')['Available_Balance'].ffill()
+
+
+# Need to work on this as it isn't working as expected - need to check the logic
+#  add a check for the Adjustment field and then only pull across the shortfall figure 
+
+
+
+df1['Shortfall_Reduction'] = df1['cumulative_sum_12Months_OVERPAY'] - df1['cumulative_sum_12Months']
+
+df1['Remaining_Balance'] = df1['Available_Balance'] - df1['Shortfall_Reduction']
+
+# # Pot of Money that can be used to offset under payments
+# df1['Pot_of_Gold'] = np.where( 
+#     df1['Adjust_shortfall_Y/N'] == 'Y', 
+#     df1['Total_cum_sum'] + df1['Shortfall SG'], 
+#    np.where(
+#          df1['Adjust_shortfall_Y/N'] == 'N',
+#          df1['Pot_of_Gold']
+#    )
+# )
+
+
+# df1['Adjusted_Shortfall'] = np.where(
+#     df1['Total_cum_sum'] < 0, df1['Shortfall SG'] - df1['Total_cum_sum'], df1['Shortfall SG']
+# )
+
+
+df1['One_Year_Prior'] = df1['Period_Ending'] - pd.DateOffset(years=1)
+
+
+
+
+print(df1.head())
+
+df1.to_csv('output.csv', index=False)
+
+# Pivot Table code
+
 # def pivot_table(df, output_dir="output", file_suffix="LABOUR"):
-
-
-#     # Define the columns to keep
+#     # Define the columns to keep as index
 #     index_columns = ['QtrEMPLID', 'FY_Q_Label', 'Emp.Code', 'FY_Q', 'Financial_Year', 
-#                     'Full_Name', 'Pay_Number', 'Line']
+#                      'Full_Name', 'Pay_Number', 'Line']
 
+#     # Define unique PayCodes to pivot
+#     unique_paycodes = [
+#         'PL-VACC', 'WCOMP-EX', 'HRSBNS', 'LOAD', 'SL', 'BEREAVE', 'NORMAL', 
+#         'PH', 'TAFE', 'CASBNS', 'BONUS', 'AL', 'MEAL', 'LOADING', 'VEHICLE', 
+#         'MVGARTH', 'AL-CASHO', 'BACK', 'MEAL4'
+#     ]
 
-#     unique_paycodes = ['PL-VACC', 'WCOMP-EX', 'HRSBNS', 'LOAD', 'SL', 'BEREAVE', 'NORMAL', 
-#      'PH', 'TAFE', 'CASBNS', 'BONUS', 'AL', 'MEAL', 'LOADING', 'VEHICLE', 
-#      'MVGARTH', 'AL-CASHO', 'BACK', 'MEAL4']
-    
+#     # ✅ Preserve original dataframe structure
+#     original_columns = df.columns.tolist()
 
-
-#     # First, filter the DataFrame to only include rows with PayCodes in your list
-#     filtered_df = df[df['PayCode'].isin(unique_paycodes)]
-
-#     # Pivot the table using PayCode values as columns
-#     df_pivot = filtered_df.pivot_table(
+#     # 🔹 Pivoting the table using PayCode values as columns
+#     df_pivot = df.pivot_table(
 #         index=index_columns,
 #         columns='PayCode',
-#         values='Total',     # Or ['Total', 'Hours/Value'] if you want multiple
+#         values='Total',  # You can include multiple like ['Total', 'Hours/Value']
 #         aggfunc='sum'
 #     ).reset_index()
 
-#     # Flatten the MultiIndex columns (if needed)
-#     df_pivot.columns.name = None  # remove the pivoted column name (PayCode)
+#     # 🔹 Flatten MultiIndex columns if needed
+#     df_pivot.columns.name = None  # Remove the 'PayCode' level
 #     df_pivot.columns = [str(col) for col in df_pivot.columns]
 
-#     # Display the result
-#     print(df_pivot.head())
+
+#     # 🔹 Merge the pivoted data back to the original dataset
+#     df_merged = df.drop(columns=['Total']).drop_duplicates()  # Remove 'Total' before merging to avoid conflicts
+#     df_final = df_merged.merge(df_pivot, on=index_columns, how='left')
 
 
-#         # Flatten MultiIndex columns
-#     #df_pivot.columns = ['_'.join(col).strip('_') for col in df_pivot.columns.values]
+#     # Keep only the required columns (index columns + unique PayCodes)
+#     final_columns = index_columns + unique_paycodes
+#     df_final = df_pivot.loc[:, df_pivot.columns.isin(final_columns)]
+
+#     print('Df_final: ')
+#     print(df_final.columns)
+
+#     unique_paycodes_reduced = ['AL', 'AL-CASHO', 'BEREAVE',
+#        'CASBNS', 'HRSBNS', 'LOAD', 'LOADING', 'MEAL', 'MEAL4', 'NORMAL', 'PH',
+#        'PL-VACC', 'SL', 'TAFE', 'VEHICLE', 'WCOMP-EX']
+
+#   # ✅ Drop rows where all unique_paycodes are blank (NaN or 0)
+#     df_final = df_final.dropna(subset=unique_paycodes, how='all')  
+#     df_final = df_final.loc[~(df_final[unique_paycodes].fillna(0) == 0).all(axis=1)]  
 
 
-#      # Ensure the output directory exists
+#     # 🔹 Ensure the output directory exists
 #     os.makedirs(output_dir, exist_ok=True)
 
-#     # Define output file path
+#     # 🔹 Define output file path
 #     filename = os.path.join(output_dir, f"Pivot_Test_{file_suffix}.csv")
 
-#     # Save to CSV
-#     df_pivot.to_csv(filename, index=False)
+#     # 🔹 Save to CSV
+#     df_final.to_csv(filename, index=False)
 
-#     print(f"File saved: {filename}")
+#     print(f"✅ File saved: {filename}")
 
-#     return df_pivot
-
-
-import os
-import pandas as pd
-
-def pivot_table(df, output_dir="output", file_suffix="LABOUR"):
-    # Define the columns to keep as index
-    index_columns = ['QtrEMPLID', 'FY_Q_Label', 'Emp.Code', 'FY_Q', 'Financial_Year', 
-                     'Full_Name', 'Pay_Number', 'Line']
-
-    # Define unique PayCodes to pivot
-    unique_paycodes = [
-        'PL-VACC', 'WCOMP-EX', 'HRSBNS', 'LOAD', 'SL', 'BEREAVE', 'NORMAL', 
-        'PH', 'TAFE', 'CASBNS', 'BONUS', 'AL', 'MEAL', 'LOADING', 'VEHICLE', 
-        'MVGARTH', 'AL-CASHO', 'BACK', 'MEAL4'
-    ]
-
-    # ✅ Preserve original dataframe structure
-    original_columns = df.columns.tolist()
-
-    # 🔹 Pivoting the table using PayCode values as columns
-    df_pivot = df.pivot_table(
-        index=index_columns,
-        columns='PayCode',
-        values='Total',  # You can include multiple like ['Total', 'Hours/Value']
-        aggfunc='sum'
-    ).reset_index()
-
-    # 🔹 Flatten MultiIndex columns if needed
-    df_pivot.columns.name = None  # Remove the 'PayCode' level
-    df_pivot.columns = [str(col) for col in df_pivot.columns]
-
-
-    # 🔹 Merge the pivoted data back to the original dataset
-    df_merged = df.drop(columns=['Total']).drop_duplicates()  # Remove 'Total' before merging to avoid conflicts
-    df_final = df_merged.merge(df_pivot, on=index_columns, how='left')
-
-
-    # Keep only the required columns (index columns + unique PayCodes)
-    final_columns = index_columns + unique_paycodes
-    df_final = df_pivot.loc[:, df_pivot.columns.isin(final_columns)]
-
-    print('Df_final: ')
-    print(df_final.columns)
-
-    unique_paycodes_reduced = ['AL', 'AL-CASHO', 'BEREAVE',
-       'CASBNS', 'HRSBNS', 'LOAD', 'LOADING', 'MEAL', 'MEAL4', 'NORMAL', 'PH',
-       'PL-VACC', 'SL', 'TAFE', 'VEHICLE', 'WCOMP-EX']
-
-  # ✅ Drop rows where all unique_paycodes are blank (NaN or 0)
-    df_final = df_final.dropna(subset=unique_paycodes_reduced, how='all')  
-    df_final = df_final.loc[~(df_final[unique_paycodes_reduced].fillna(0) == 0).all(axis=1)]  
-
-
-    # 🔹 Ensure the output directory exists
-    os.makedirs(output_dir, exist_ok=True)
-
-    # 🔹 Define output file path
-    filename = os.path.join(output_dir, f"Pivot_Test_{file_suffix}.csv")
-
-    # 🔹 Save to CSV
-    df_final.to_csv(filename, index=False)
-
-    print(f"✅ File saved: {filename}")
-
-    return df_final
+#     return df_final
 
 
 
 
-pivot_table(mergedData_Labour, file_suffix='LABOUR')
+# pivot_table(mergedData_Labour, file_suffix='LABOUR')
 
 
 
