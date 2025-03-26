@@ -324,18 +324,18 @@ df1['clumative_sum'] = df1.groupby(['Emp.Code'])['Shortfall SG'].cumsum()
 
 
 
+# Suspect this column is redundant
 
-
-df1['cumulative_sum_12Months'] = df1.groupby('Emp.Code').apply(
-    lambda g: g.apply(
-        lambda row: g.loc[
-            (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &
-            (g['Period_Ending'] <= row['Period_Ending']),
-            'Shortfall SG'
-        ].sum(), 
-        axis=1
-    )
-).reset_index(level=0, drop=True)
+# df1['cumulative_sum_12Months'] = df1.groupby('Emp.Code').apply(
+#     lambda g: g.apply(
+#         lambda row: g.loc[
+#             (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &
+#             (g['Period_Ending'] <= row['Period_Ending']),
+#             'Shortfall SG'
+#         ].sum(), 
+#         axis=1
+#     )
+# ).reset_index(level=0, drop=True)
 
 
 
@@ -383,16 +383,153 @@ df1['Adjust_shortfall_Y/N'] = np.where(
 )
 
 
+df1['cumulative_sum_12Months'] = df1.groupby('Emp.Code').apply(
+    lambda g: g.apply(
+        lambda row: g.loc[
+            (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &  # Only past 12 months
+            (g['Period_Ending'] <= row['Period_Ending']) &  # Up to current row’s Period_Ending
+            (g['Adjust_shortfall_Y/N'] == 'Y'),  # Only when Adjust_shortfall_Y/N is 'Y'
+            'Shortfall SG'
+        ].sum(), 
+        axis=1
+    )
+).reset_index(level=0, drop=True)
 
-# Step 1: Compute Pot_of_Gold where Adjust_shortfall_Y/N is 'Y'
+
+
+
+
+
+# # Step 1: Compute Pot_of_Gold where Adjust_shortfall_Y/N is 'Y'
+# df1['Available_Balance'] = np.where(
+#     df1['Adjust_shortfall_Y/N'] == 'Y', 
+#     df1['cumulative_sum_12Months_OVERPAY'] - df1['Shortfall SG'].row,
+#     np.nan  # Set others as NaN for now
+# )
+
+
+
+
+# Step 1: Compute Available Balance where Adjust_shortfall_Y/N is 'Y'
 df1['Available_Balance'] = np.where(
     df1['Adjust_shortfall_Y/N'] == 'Y', 
-    df1['cumulative_sum_12Months'],
+    #df1['cumulative_sum_12Months_OVERPAY'] + df1['Shortfall SG'], 
+    df1['cumulative_sum_12Months_OVERPAY'] + df1['cumulative_sum_12Months'],
     np.nan  # Set others as NaN for now
 )
 
+
+# df1['Offset_Shortfall_Y/N'] = np.where(
+#     (df1['Shortfall SG'] < 0) & (df1['Available_Balance'] > 0), 'Y',
+#      np.where((df1['Shortfall SG'] < 0) & (df1['Available_Balance'] < 0), 'P',
+#      'N'
+# )
+# )
+
+
+
+# df1['Offset_Shortfall_Y/N'] = np.where(
+#     (df1['Shortfall SG'] < 0) & (df1['Available_Balance'] > abs(df1['Shortfall SG'])), 'Y',  # Fully covered
+#     np.where(
+#         (df1['Shortfall SG'] < 0) & (df1['Available_Balance'] > 0) & (df1['Available_Balance'] < abs(df1['Shortfall SG'])), 'P',  # Partially covered
+#         'N'  # Not covered at all
+#     )
+# )
+
+
+
+df1['Offset_Shortfall_Y/N'] = np.where(
+    (df1['Shortfall SG'] < 0) & (df1['Available_Balance'] > abs(df1['Shortfall SG'])), 'Y',  # Fully covered
+    np.where(
+        (df1['Shortfall SG'] < 0) & (df1['cumulative_sum_12Months_OVERPAY'] > 0) & 
+       # (df1['Available_Balance'] < abs(df1['Shortfall SG'])), 'P',  # Partially covered
+        (abs(df1['Available_Balance']) < abs(df1['Shortfall SG'])), 'P',  # Partially covered
+        'N'  # Not covered at all
+    )
+)
+
+#cumulative_sum_12Months_OVERPAY
+
+# df1['Shortfall_Reduction'] = np.where(
+#     df1['Offset_Shortfall_Y/N'] == 'Y', -df1['Shortfall SG'], 0
+# )
+
+
+
+
+
+# df1['Shortfall_Reduction'] = df1.groupby('Emp.Code')['Shortfall_Reduction'].cumsum()
+
+
+
+df1['Shortfall_Reduction'] = np.where(
+    df1['Offset_Shortfall_Y/N'] == 'Y',
+    df1['Shortfall SG'],
+     np.where(df1['Offset_Shortfall_Y/N'] == 'P', -(abs(df1['Shortfall SG']) - abs(df1['Available_Balance'])),
+              #np.where(abs(df1['Shortfall SG']) - abs(df1['Available_Balance']) < 0, 0,
+               #        0)
+               np.where(df1['Offset_Shortfall_Y/N'] == 'N', 0, 0)
+                   
+               )
+        
+     )
+     
+df1['Remaining_Shortfall_Balance'] = np.where(
+    df1['Available_Balance'] <= 0, df1['Available_Balance'] , 0
+)
+
+    
+# df1['Remaining_Shortfall_Balance'] = np.where(
+#     (df1['Available_Balance'] <= 0 & df1['Offset_Shortfall_Y/N'] == 'N'), df1['Shortfall SG'],
+#     np.where(
+#         df1['Available_Balance'] <= 0 & df1['Offset_Shortfall_Y/N'] == 'P', df1['Available_Balance'],
+#         0
+#     )
+# )
+
+
+# df1['Remaining_Shortfall_Balance'] = np.where(
+#     ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'N')), df1['Shortfall SG'],
+#     np.where(
+#         ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'P')), df1['Available_Balance'],
+#         0
+#     )
+# )
+
+
+
+df1['Remaining_Shortfall_Balance'] = np.where(
+    ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'N')), df1['Shortfall SG'],
+    np.where(
+        ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'P')), df1['Available_Balance'],
+    np.where(
+       ((df1['Offset_Shortfall_Y/N'] == 'N') & (df1['Shortfall SG'] < 0)), df1['Shortfall SG'],
+        0
+    )
+    )
+)
+
+
+
+# df1['Shortfall_Reduction'] = np.where(
+#     df1['Offset_Shortfall_Y/N'] == 'Y',
+#     df1['cumulative_sum_12Months_OVERPAY'], 
+    
+#     np.where(
+#         (df1['Offset_Shortfall_Y/N'] == 'N') & (df1['Remaining_Balance'] != 0),
+#         df1['cumulative_sum_12Months_OVERPAY'],
+#         0
+#     )
+#      )
+
+# df1['Available_Balance'] + df1['Shortfall_Reduction']
+
+# Step 2: Forward fill to take the last non-NaN value
+#df1['Available_Balance'] = df1.groupby('Emp.Code')['Available_Balance'].ffill()
+
+
 # Step 2: Forward fill within each Emp.Code group to propagate last value
-df1['Available_Balance'] = df1.groupby('Emp.Code')['Available_Balance'].ffill()
+#df1['Available_Balance'] = df1.groupby('Emp.Code')['Available_Balance'].ffill()
 
 
 # Need to work on this as it isn't working as expected - need to check the logic
@@ -400,9 +537,11 @@ df1['Available_Balance'] = df1.groupby('Emp.Code')['Available_Balance'].ffill()
 
 
 
-df1['Shortfall_Reduction'] = df1['cumulative_sum_12Months_OVERPAY'] - df1['cumulative_sum_12Months']
+#df1['Shortfall_Reduction'] = df1['cumulative_sum_12Months_OVERPAY'] - df1['cumulative_sum_12Months']
 
-df1['Remaining_Balance'] = df1['Available_Balance'] - df1['Shortfall_Reduction']
+
+
+
 
 # # Pot of Money that can be used to offset under payments
 # df1['Pot_of_Gold'] = np.where( 
@@ -427,7 +566,7 @@ df1['One_Year_Prior'] = df1['Period_Ending'] - pd.DateOffset(years=1)
 
 print(df1.head())
 
-df1.to_csv('output.csv', index=False)
+df1.to_csv('RollingShortfallOffset_output.csv', index=False)
 
 # Pivot Table code
 
