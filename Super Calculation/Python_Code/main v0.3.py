@@ -1,5 +1,6 @@
-import pandas as pd 
-import numpy as np
+import sys
+print(sys.executable)
+
 import os
 from dataframes import(
     process_income_paycodes,
@@ -10,7 +11,8 @@ from dataframes import(
     process_super_data,
     process_combo_paycodes
 )
-
+import pandas as pd
+import numpy as np
 
 
 
