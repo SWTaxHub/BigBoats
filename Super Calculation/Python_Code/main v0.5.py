@@ -21,6 +21,8 @@ import numpy as np
 Payroll_Labour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
 #Declare File path for Offshore Payroll
 Payroll_Offshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll"
+
+
 #Declare File path for Allowance Paycodes 
 allowancePaycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Allowances_crossEntity.csv"
 #Declare File path for Contribution Paycodes 
@@ -211,8 +213,7 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
 
     merged_data['SW Map - S&W SG'] = merged_data['SW Mapping - S&W'] * merged_data['SG_Rate']
 
-    # Test 28/04/2025
-    merged_data['Client Map - S&W SG'] = merged_data['Client Mapping - S&W'] * merged_data['SG_Rate']
+   
 
     super_codes = ['8', '9']
 
@@ -224,8 +225,7 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
 
     merged_data['SCH - actual SG received'] = 0 
 
-    # Test 28/04/2025
-    merged_data['OTE - Client to SW Map Discrepancy'] = merged_data['Client mapping - OTE'] - merged_data['SW Mapping - OTE']
+    
 
     #merged_data['S&W - Client to SW Map Discrepancy'] = merged_data['Client Mapping - S&W'] - merged_data['SW Mapping - S&W']
 
@@ -422,191 +422,7 @@ agg_methods = {
 
 
 
-
-df1 =  mergedData_Labour.groupby(['Period_Ending', 'Pay_Number', 'Emp.Code']).agg(agg_methods).reset_index()
-
-df1 = df1.sort_values(by=['Emp.Code', 'Period_Ending'])  # Ensure chronological order
-
-
-print(df1.columns)
-
-
-df1['SW Map - OTE SG expected'] = df1['SW Map - OTE SG expected'].round(2)
-
-df1['Shortfall SG'] = df1['Payroll - actual SG paid'] - df1['SW Map - OTE SG expected']
-
-df1['clumative_sum'] = df1.groupby(['Emp.Code'])['Shortfall SG'].cumsum()
-
-
-
-df1 = df1.sort_values(by=['Emp.Code', 'Period_Ending'])  # Ensure chronological order
-
-
-
-
-df1['cumulative_sum_12Months_OVERPAY'] = df1.groupby('Emp.Code').apply(
-    lambda g: g.apply(
-        lambda row: g.loc[
-            (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &  # Only past 12 months
-            (g['Period_Ending'] <= row['Period_Ending']) &  # Up to current row’s Period_Ending
-            (g['Shortfall SG'] > 0.01),  # Only consider positive values
-            'Shortfall SG'
-        ].sum(), 
-        axis=1
-    )
-).reset_index(level=0, drop=True)
-
-
-df1['Adjust_shortfall_Y/N'] = np.where(
-    (df1['Shortfall SG'] < 0) & (df1['cumulative_sum_12Months_OVERPAY'] > 0), 'Y', 'N'
-)
-
-
-df1['cumulative_sum_12Months'] = df1.groupby('Emp.Code').apply(
-    lambda g: g.apply(
-        lambda row: g.loc[
-            (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &  # Only past 12 months
-            (g['Period_Ending'] <= row['Period_Ending']) &  # Up to current row’s Period_Ending
-            (g['Adjust_shortfall_Y/N'] == 'Y'),  # Only when Adjust_shortfall_Y/N is 'Y'
-            'Shortfall SG'
-        ].sum(), 
-        axis=1
-    )
-).reset_index(level=0, drop=True)
-
-
-
-
-# Step 1: Compute Available Balance where Adjust_shortfall_Y/N is 'Y'
-df1['Available_Balance'] = np.where(
-    df1['Adjust_shortfall_Y/N'] == 'Y', 
-    #df1['cumulative_sum_12Months_OVERPAY'] + df1['Shortfall SG'], 
-    df1['cumulative_sum_12Months_OVERPAY'] + df1['cumulative_sum_12Months'],
-    np.nan  # Set others as NaN for now
-)
-
-
-
-df1['Offset_Shortfall_Y/N'] = np.where(
-    (df1['Shortfall SG'] < 0) & (df1['Available_Balance'] > abs(df1['Shortfall SG'])), 'Y',  # Fully covered
-    np.where(
-        (df1['Shortfall SG'] < 0) & (df1['cumulative_sum_12Months_OVERPAY'] > 0) & 
-       # (df1['Available_Balance'] < abs(df1['Shortfall SG'])), 'P',  # Partially covered
-        (abs(df1['Available_Balance']) < abs(df1['Shortfall SG'])), 'P',  # Partially covered
-        'N'  # Not covered at all
-    )
-)
-
-df1['Shortfall_Reduction'] = np.where(
-    df1['Offset_Shortfall_Y/N'] == 'Y',
-    df1['Shortfall SG'],
-     np.where(df1['Offset_Shortfall_Y/N'] == 'P', -(abs(df1['Shortfall SG']) - abs(df1['Available_Balance'])),
-              #np.where(abs(df1['Shortfall SG']) - abs(df1['Available_Balance']) < 0, 0,
-               #        0)
-               np.where(df1['Offset_Shortfall_Y/N'] == 'N', 0, 0)
-                   
-               )
-        
-     )
-     
-df1['Remaining_Shortfall_Balance'] = np.where(
-    df1['Available_Balance'] <= 0, df1['Available_Balance'] , 0
-)
-
-
-
-
-df1['Remaining_Shortfall_Balance'] = np.where(
-    ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'N')), df1['Shortfall SG'],
-    np.where(
-        ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'P')), df1['Available_Balance'],
-    np.where(
-       ((df1['Offset_Shortfall_Y/N'] == 'N') & (df1['Shortfall SG'] < 0)), df1['Shortfall SG'],
-        0
-    )
-    )
-)
-
-
-df1['One_Year_Prior'] = df1['Period_Ending'] - pd.DateOffset(years=1)
-
-
-print(df1.head())
-
-df1.to_csv('RollingShortfallOffset_output_OG.csv', index=False)
-
-# Pivot Table code
-
-# def pivot_table(df, output_dir="output", file_suffix="LABOUR"):
-#     # Define the columns to keep as index
-#     index_columns = ['QtrEMPLID', 'FY_Q_Label', 'Emp.Code', 'FY_Q', 'Financial_Year', 
-#                      'Full_Name', 'Pay_Number', 'Line']
-
-#     # Define unique PayCodes to pivot
-#     unique_paycodes = [
-#         'PL-VACC', 'WCOMP-EX', 'HRSBNS', 'LOAD', 'SL', 'BEREAVE', 'NORMAL', 
-#         'PH', 'TAFE', 'CASBNS', 'BONUS', 'AL', 'MEAL', 'LOADING', 'VEHICLE', 
-#         'MVGARTH', 'AL-CASHO', 'BACK', 'MEAL4'
-#     ]
-
-#     # ✅ Preserve original dataframe structure
-#     original_columns = df.columns.tolist()
-
-#     # 🔹 Pivoting the table using PayCode values as columns
-#     df_pivot = df.pivot_table(
-#         index=index_columns,
-#         columns='PayCode',
-#         values='Total',  # You can include multiple like ['Total', 'Hours/Value']
-#         aggfunc='sum'
-#     ).reset_index()
-
-#     # 🔹 Flatten MultiIndex columns if needed
-#     df_pivot.columns.name = None  # Remove the 'PayCode' level
-#     df_pivot.columns = [str(col) for col in df_pivot.columns]
-
-
-#     # 🔹 Merge the pivoted data back to the original dataset
-#     df_merged = df.drop(columns=['Total']).drop_duplicates()  # Remove 'Total' before merging to avoid conflicts
-#     df_final = df_merged.merge(df_pivot, on=index_columns, how='left')
-
-
-#     # Keep only the required columns (index columns + unique PayCodes)
-#     final_columns = index_columns + unique_paycodes
-#     df_final = df_pivot.loc[:, df_pivot.columns.isin(final_columns)]
-
-#     print('Df_final: ')
-#     print(df_final.columns)
-
-#     unique_paycodes_reduced = ['AL', 'AL-CASHO', 'BEREAVE',
-#        'CASBNS', 'HRSBNS', 'LOAD', 'LOADING', 'MEAL', 'MEAL4', 'NORMAL', 'PH',
-#        'PL-VACC', 'SL', 'TAFE', 'VEHICLE', 'WCOMP-EX']
-
-#   # ✅ Drop rows where all unique_paycodes are blank (NaN or 0)
-#     df_final = df_final.dropna(subset=unique_paycodes, how='all')  
-#     df_final = df_final.loc[~(df_final[unique_paycodes].fillna(0) == 0).all(axis=1)]  
-
-
-#     # 🔹 Ensure the output directory exists
-#     os.makedirs(output_dir, exist_ok=True)
-
-#     # 🔹 Define output file path
-#     filename = os.path.join(output_dir, f"Pivot_Test_{file_suffix}.csv")
-
-#     # 🔹 Save to CSV
-#     df_final.to_csv(filename, index=False)
-
-#     print(f"✅ File saved: {filename}")
-
-#     return df_final
-
-
-
-
-# pivot_table(mergedData_Labour, file_suffix='LABOUR')
-
-
-
-# # # # Create QTR Results Table lines 357 to
+# # # # Create QTR Results Table 
 
 def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     """
@@ -719,9 +535,151 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         )
     )
 
+    quarterly_summary['Above / Met cap'] = np.where(quarterly_summary['SW Mapping - OTE'] > quarterly_summary['MCB'], 'Above / met cap', 
+        np.where(quarterly_summary['SW Mapping - OTE'] < quarterly_summary['MCB'], 'Below cap', "N/A"))
+    
+
+    # Add column for Discrepancy 1 - SW Map Expected / Client Map
+    quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'] = (quarterly_summary['Client - Exepected Minimum SG'] - quarterly_summary['SW - Exepected Minimum SG']).round(0)
+
+    # Add column for Discrepancy 2 - Client Map - Expected Total SG
+
+    quarterly_summary['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (quarterly_summary['Payroll - actual SG paid'] - quarterly_summary['Client Mapping - OTE SG Expected']).round(0)
+    
+    # Add column for Discrepancy 3 - SW Map Expected / Payroll paid
+    quarterly_summary['Discrepany 3 - SW Map Expected / Payroll paid'] = (quarterly_summary['Payroll - actual SG paid'] - quarterly_summary['SW Map - OTE SG expected']).round(0)
+    
+    quarterly_summary['SW Comment - Discrepancy 1'] = ""
+    quarterly_summary['SW Comment - Discrepancy 2'] = ""
+    quarterly_summary['SW Comment - Discrepancy 3'] = ""
+    quarterly_summary['SW - Final Comment'] = ""
 
 
-   
+
+    
+# # # Adding the new column 
+# # QTR_Results["SW Comment - Discrepancy 1"] = np.where(
+# #     QTR_Results["Discrepancy 1 - SW / FLUOR Mapping"] == 0, "No discrepancy",
+# #     np.where(
+# #         QTR_Results["Discrepancy 1 - SW / FLUOR Mapping"] == QTR_Results["SW Map expected Additional SG"], "Missing additional super (0.5%)",
+# #         np.where(
+# #             QTR_Results["Discrepancy 1 - SW / FLUOR Mapping"] >= 1, "Under - mapping config issue",
+# #             np.where(
+# #                 QTR_Results["Discrepancy 1 - SW / FLUOR Mapping"] <= -1, "Over - mapping config difference",
+# #                 np.where(
+# #                     (-1 < QTR_Results["Discrepancy 1 - SW / FLUOR Mapping"]) & (QTR_Results["Discrepancy 1 - SW / FLUOR Mapping"] < 1), "No discrepancy",
+# #                     None
+# #                 )
+# #             )
+# #         )
+# #     )
+# # )
+
+
+# # row_count = count_rows(QTR_Results)
+# # print(f"The DataFrame has {row_count} rows after Step 22.")
+
+
+# # # Step 23: Adding Discrepency 2 comment column
+
+# # QTR_Results["SW Comment - Discrepancy 2"] = np.where(
+# #     (QTR_Results["Discrepancy 2 - FLUOR System Calc"] < 1) & 
+# #     (QTR_Results["Discrepancy 2 - FLUOR System Calc"] > -1), "No discrepancy",
+# #     np.where(
+# #         (QTR_Results["Discrepancy 2 - FLUOR System Calc"] != 0) & 
+# #         ((QTR_Results["FLOUR - OTE"] * 
+# #           (QTR_Results["SG Rate"] + QTR_Results["Additional Super Rate"]) - 
+# #           QTR_Results["Payroll Super"]) < 1) & 
+# #         ((QTR_Results["FLOUR - OTE"] * 
+# #           (QTR_Results["SG Rate"] + QTR_Results["Additional Super Rate"]) - 
+# #           QTR_Results["Payroll Super"]) > -1), "Not capping",
+# #         np.where(
+# #             QTR_Results["FLOUR Map - Expected Total SG"] == 
+# #             QTR_Results["Discrepancy 2 - FLUOR System Calc"], "No payroll super",
+# #             np.where(
+# #                 QTR_Results["Discrepancy 2 - FLUOR System Calc"] >= 1, "Under - System calc issue",
+# #                 np.where(
+# #                     QTR_Results["Discrepancy 2 - FLUOR System Calc"] <= -1, "Over - System calc difference",
+# #                     None
+# #                 )
+# #             )
+# #         )
+# #     )
+# # )
+
+# # row_count = count_rows(QTR_Results)
+# # print(f"The DataFrame has {row_count} rows after Step 23.")
+
+
+# # # Step 24: Adding Discrepency 3 comment column
+
+# # QTR_Results["SW Comment - Discrepancy 3"] = np.where(
+# #     QTR_Results["Discrepancy 3 - FLUOR Paid Calc"] >= 1, "Under - Actual paid issue",
+# #     np.where(
+# #         QTR_Results["Discrepancy 3 - FLUOR Paid Calc"] <= -1, "Over - Actual paid difference",
+# #         np.where(
+# #             QTR_Results["Discrepancy 3 - FLUOR Paid Calc"] < -1, "No discrepancy",
+# #             np.where(
+# #                 QTR_Results["Discrepancy 3 - FLUOR Paid Calc"] > -1, "No discrepancy",
+# #                 None
+# #             )
+# #         )
+# #     )
+# # )
+
+# # row_count = count_rows(QTR_Results)
+# # print(f"The DataFrame has {row_count} rows after Step 24.")
+
+
+# # # Step 25: Adding Discrepency 4 comment column
+
+# # QTR_Results["SW Comment - Discrepancy 4"] = np.where(
+# #     (QTR_Results["SW Comment - Discrepancy 1"] == "No discrepancy") & 
+# #     (QTR_Results["SW Comment - Discrepancy 3"] == "No discrepancy") & 
+# #     (QTR_Results["SW Comment - Discrepancy 2"] == "No super"), "No Super",
+# #     np.where(
+# #         QTR_Results["Discrepancy 1 - SW / FLUOR Mapping"] == 
+# #         QTR_Results["Discrepancy 4 - SW Expected / SCH Actual"], QTR_Results["SW Comment - Discrepancy 1"],
+# #         np.where(
+# #             (QTR_Results["SW Comment - Discrepancy 1"] == "No discrepancy") & 
+# #             (QTR_Results["Discrepancy 2 - FLUOR System Calc"] == QTR_Results["Discrepancy 4 - SW Expected / SCH Actual"]),
+# #             QTR_Results["SW Comment - Discrepancy 2"],
+# #             np.where(
+# #                 (QTR_Results["SW Comment - Discrepancy 1"] != "No discrepancy") & 
+# #                 (QTR_Results["SW Comment - Discrepancy 2"] != "No discrepancy") & 
+# #                 (QTR_Results["SW Comment - Discrepancy 3"] == "No discrepancy"),
+# #                 QTR_Results["SW Comment - Discrepancy 1"] + " & " + QTR_Results["SW Comment - Discrepancy 2"],
+# #                 np.where(
+# #                     (QTR_Results["SW Comment - Discrepancy 1"] != "No discrepancy") & 
+# #                     (QTR_Results["SW Comment - Discrepancy 2"] == "No discrepancy") & 
+# #                     (QTR_Results["SW Comment - Discrepancy 3"] == "No discrepancy"),
+# #                     QTR_Results["SW Comment - Discrepancy 1"],
+# #                     np.where(
+# #                         (QTR_Results["SW Comment - Discrepancy 1"] == "No discrepancy") & 
+# #                         (QTR_Results["SW Comment - Discrepancy 2"] == "No discrepancy") & 
+# #                         (QTR_Results["SW Comment - Discrepancy 3"] != "No discrepancy"),
+# #                         QTR_Results["SW Comment - Discrepancy 3"],
+# #                         np.where(
+# #                             (QTR_Results["Discrepancy 4 - SW Expected / SCH Actual"] >= 1), "Under",
+# #                             np.where(
+# #                                 (QTR_Results["Discrepancy 4 - SW Expected / SCH Actual"] <= -1), "Over",
+# #                                 np.where(
+# #                                     (-1 < QTR_Results["Discrepancy 4 - SW Expected / SCH Actual"]) & 
+# #                                     (QTR_Results["Discrepancy 4 - SW Expected / SCH Actual"] < 1), "No discrepancy",
+# #                                     None
+# #                                 )
+# #                             )
+# #                         )
+# #                     )
+# #                 )
+# #             )
+# #         )
+# #     )
+# # )
+
+# # row_count = count_rows(QTR_Results)
+# # print(f"The DataFrame has {row_count} rows after Step 25.")
+
 
 
 
@@ -739,9 +697,10 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
 
 
 
-quarterly_summary = aggregate_quarterly_data(mergedData_Labour)
+quarterly_summary_LAB = aggregate_quarterly_data(mergedData_Labour)
+quarterly_summary_OFF = aggregate_quarterly_data(mergedData_Offshore, file_suffix="OFFSHORE")
 
- 
+combined_quarterly_summary = pd.concat([quarterly_summary_OFF, quarterly_summary_LAB], ignore_index=True)
 
 
 def SG_actual_Vs_SW_Map(df, output_dir="output", file_suffix="LABOUR"):
@@ -782,7 +741,7 @@ def SG_actual_Vs_SW_Map(df, output_dir="output", file_suffix="LABOUR"):
     grouped_df = df.groupby(group_by_columns).agg(agg_methods).reset_index()
 
 
-    columns_to_drop = ['Description', 'Client Mapping', 'SW mapping']
+    columns_to_drop = ['Pay_Number', 'Line', 'Hours/Value', 'Pay_Rate', 'Description', 'Total', 'Client Mapping', 'SW mapping']
 
      # Drop unneeded columns if provided
    
@@ -790,39 +749,39 @@ def SG_actual_Vs_SW_Map(df, output_dir="output", file_suffix="LABOUR"):
 
 
 
-    grouped_df['SW - Exepected Minimum SG'] = np.where(
-    grouped_df['SW Mapping - OTE'] > grouped_df['MCB'],
-    grouped_df['MCB'] * grouped_df['SG_Rate'], np.where(
-       grouped_df['SW Mapping - OTE']  < grouped_df['MCB'], 
-       grouped_df['SW Mapping - OTE'] * grouped_df['SG_Rate'],
-       0 
-        )
-    )
+
+    grouped_df['Above / Met cap'] = np.where(grouped_df['SW Mapping - OTE'] > grouped_df['MCB'], 'Above / met cap', 
+        np.where(grouped_df['SW Mapping - OTE'] < grouped_df['MCB'], 'Below cap', "N/A"))
+    
+
+    # Add column for Discrepancy 1 - SW Map Expected / Client Map
+    grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] = (grouped_df['Client Mapping - OTE SG Expected'] - grouped_df['SW Map - OTE SG expected']).round(0)
+
+    # Add column for Discrepancy 2 - Client Map - Expected Total SG
+
+    grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['Client Mapping - OTE SG Expected']).round(0)
+    
+    # Add column for Discrepancy 3 - SW Map Expected / Payroll paid
+    grouped_df['Discrepany 3 - SW Map Expected / Payroll paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['SW Map - OTE SG expected']).round(0)
+    
+    grouped_df['SW Comment - Discrepancy 1'] = ""
+    grouped_df['SW Comment - Discrepancy 2'] = ""
+    grouped_df['SW Comment - Discrepancy 3'] = ""
+    grouped_df['SW - Final Comment'] = ""
 
 
 
-    # Add Column Client - Expected Minimum SG
+    # Commented out 29/04/2025
+    # grouped_df['Payroll_Vs_SW_Expected_Min_SG'] = grouped_df['Payroll - actual SG paid'] - grouped_df['SW - Exepected Minimum SG']
 
-    grouped_df['Client - Exepected Minimum SG'] = np.where(
-    grouped_df['Client mapping - OTE'] > grouped_df['MCB'],
-    grouped_df['MCB'] * grouped_df['SG_Rate'], np.where(
-       grouped_df['Client mapping - OTE']  < grouped_df['MCB'], 
-       grouped_df['Client mapping - OTE'] * grouped_df['SG_Rate'],
-       0 
-        )
-    )
-
-
-    grouped_df['Payroll_Vs_SW_Expected_Min_SG'] = grouped_df['Payroll - actual SG paid'] - grouped_df['SW - Exepected Minimum SG']
-
-    grouped_df['Payroll_Vs_Client_Expected_Min_SG'] = grouped_df['Payroll - actual SG paid'] - grouped_df['Client - Exepected Minimum SG']
+    # grouped_df['Payroll_Vs_Client_Expected_Min_SG'] = grouped_df['Payroll - actual SG paid'] - grouped_df['Client - Exepected Minimum SG']
 
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
     # Define output file path
-    filename = os.path.join(output_dir, f"SG_actual_Vs_SW_Map_{file_suffix}.csv")
-
+    #filename = os.path.join(output_dir, f"SG_actual_Vs_SW_Map_{file_suffix}.csv")
+    filename = os.path.join(output_dir, f"SG_Quarterly_{file_suffix}.csv")
     # Save to CSV
     grouped_df.to_csv(filename, index=False)
 
@@ -830,7 +789,244 @@ def SG_actual_Vs_SW_Map(df, output_dir="output", file_suffix="LABOUR"):
     return grouped_df
 
 # Call the function with your DataFrame
-result_df = SG_actual_Vs_SW_Map(quarterly_summary, file_suffix='LABOUR')
+result_df_OFF = SG_actual_Vs_SW_Map(quarterly_summary_OFF, file_suffix='OFFSHORE')
+result_df_OFF['Entity'] = 'OFFSHORE'
+result_df_LAB = SG_actual_Vs_SW_Map(quarterly_summary_LAB, file_suffix='LABOUR')
+result_df_LAB['Entity'] = 'LABOUR'
+# Combine the results into a single DataFrame
+output_dir="output"
+
+combined_result_df = pd.concat([result_df_OFF, result_df_LAB], ignore_index=True)
+
+print(combined_result_df.columns)
+
+column_order = ['Entity', 'QtrEMPLID', 'Emp.Code', 'Full_Name', 'SG_Rate', 'FY_Q',
+       'Financial_Year', 'Client mapping - OTE', 'SW Mapping - OTE',
+       'SW Mapping - S&W', 'Client Mapping - OTE SG Expected',
+       'SW Map - OTE SG expected', 'SW Map - S&W SG',
+       'Payroll - actual SG paid', 'SCH - actual SG received', 'MCB',
+       'Above / Met cap', 'Discrepancy 1 - SW Map Expected / Client Map',
+       'Discrepancy 2 -  Client Map Expected / Payroll Paid',
+       'Discrepany 3 - SW Map Expected / Payroll paid',
+       'SW Comment - Discrepancy 1', 'SW Comment - Discrepancy 2',
+       'SW Comment - Discrepancy 3', 'SW - Final Comment']
+
+        
+    # Reorder the DataFrame columns
+combined_result_df = combined_result_df[column_order]
+
+
+
+filename = os.path.join(output_dir, f"SG_Quarterly_BothEntities.csv")
+combined_result_df.to_csv(filename, index=False)
+
+
+
+
+# def find_discrepant_paycodes(
+#     combined_result_df: pd.DataFrame,
+#     combined_quarterly_summary: pd.DataFrame,
+#     discrepancy_column: str,
+#     qtremplid_output_csv: str,
+#     paycode_output_csv: str
+# ) -> pd.DataFrame:
+#     """
+#     Identifies and saves discrepancies in SG Expected values for QtrEMPLIDs flagged
+#     by a given discrepancy column. Outputs both the unique QtrEMPLIDs and mismatched
+#     PayCode/Pay_Number entries to CSV.
+
+#     Args:
+#         combined_result_df: DataFrame with discrepancy flags and QtrEMPLID.
+#         combined_quarterly_summary: DataFrame with SG expected values.
+#         discrepancy_column: Column name for discrepancy check (non-zero).
+#         qtremplid_output_csv: Path to save unique QtrEMPLIDs CSV.
+#         paycode_output_csv: Path to save mismatched PayCode/Pay_Number CSV.
+
+#     Returns:
+#         A DataFrame of mismatched PayCode and Pay_Number.
+#     """
+
+#     # Step 1: Get unique QtrEMPLIDs with discrepancies
+#     flagged_ids = combined_result_df.loc[
+#         combined_result_df[discrepancy_column] != 0, 'QtrEMPLID'
+#     ].unique()
+
+#     # Step 2: Save the QtrEMPLIDs to CSV
+#     pd.DataFrame(flagged_ids, columns=['QtrEMPLID']).to_csv(qtremplid_output_csv, index=False)
+
+#     # Step 3: Filter combined_quarterly_summary for those QtrEMPLIDs
+#     relevant_rows = combined_quarterly_summary[
+#         combined_quarterly_summary['QtrEMPLID'].isin(flagged_ids)
+#     ]
+
+#     # Step 4: Find mismatches in SG expected values
+#     mismatches = relevant_rows[
+#         (relevant_rows['Client Mapping - OTE SG Expected'] -
+#          relevant_rows['SW Map - OTE SG expected']) != 0
+#     ]
+
+#     # Step 5: Select PayCode and Pay_Number
+#     result_df = mismatches[['QtrEMPLID', 'PayCode', 'Pay_Number']]
+
+#     # Concat the Paycode rows with Pay_Number rows.  Group in the same Cell where QtrEMPLID is the same
+
+#     # Step 6: Save result to CSV
+#     result_df.to_csv(paycode_output_csv, index=False)
+
+#     return result_df
+
+
+
+# discp1_results = find_discrepant_paycodes(
+#     combined_result_df,
+#     combined_quarterly_summary,
+#     discrepancy_column='Discrepancy 1 - SW Map Expected / Client Map',
+#     qtremplid_output_csv='Discp1_QtrEMPLIDs.csv',
+#     paycode_output_csv='Discp1_Paycode_Mismatches.csv'
+# )
+
+import pandas as pd
+
+def find_discrepant_paycodes_grouped(
+    combined_result_df: pd.DataFrame,
+    combined_quarterly_summary: pd.DataFrame,
+    discrepancy_column: str,
+    qtremplid_output_csv: str,
+    grouped_output_csv: str
+) -> pd.DataFrame:
+    """
+    Identifies discrepancies in SG Expected values, grouped by QtrEMPLID,
+    and concatenates PayCode and Pay_Number into a single string per QtrEMPLID.
+
+    Args:
+        combined_result_df: DataFrame with discrepancy flags and QtrEMPLID.
+        combined_quarterly_summary: DataFrame with SG expected values.
+        discrepancy_column: Name of column used to identify discrepancies.
+        qtremplid_output_csv: Path to save unique QtrEMPLIDs.
+        grouped_output_csv: Path to save grouped PayCode/Pay_Number results.
+
+    Returns:
+        DataFrame grouped by QtrEMPLID with concatenated PayCode and Pay_Number entries.
+    """
+
+    # Step 1: Get QtrEMPLIDs with discrepancies
+    flagged_ids = combined_result_df.loc[
+        combined_result_df[discrepancy_column] != 0, 'QtrEMPLID'
+    ].unique()
+
+    # Step 2: Save flagged QtrEMPLIDs
+    pd.DataFrame(flagged_ids, columns=['QtrEMPLID']).to_csv(qtremplid_output_csv, index=False)
+
+    # Step 3: Filter summary by QtrEMPLID
+    relevant_rows = combined_quarterly_summary[
+        combined_quarterly_summary['QtrEMPLID'].isin(flagged_ids)
+    ]
+
+    # Step 4: Apply mismatch condition
+    mismatches = relevant_rows[
+        (relevant_rows['Client Mapping - OTE SG Expected'] -
+         relevant_rows['SW Map - OTE SG expected']) != 0
+    ]
+
+    # Step 5: Create combined string: PayCode - Pay_Number
+    mismatches['Paycode_Entry'] = mismatches['PayCode'].astype(str) + ' - ' + mismatches['Pay_Number'].astype(str)
+
+    # Step 6: Group by QtrEMPLID
+    grouped = mismatches.groupby('QtrEMPLID')['Paycode_Entry'].apply(lambda x: ', '.join(x)).reset_index()
+
+    # Step 7: Save result
+    grouped.to_csv(grouped_output_csv, index=False)
+
+    return grouped
+
+grouped_results = find_discrepant_paycodes_grouped(
+    combined_result_df,
+    combined_quarterly_summary,
+    discrepancy_column='Discrepancy 1 - SW Map Expected / Client Map',
+    qtremplid_output_csv='Discp1_QtrEMPLIDs.csv',
+    grouped_output_csv='Discp1_Grouped_Paycode_Entries.csv'
+)
+
+
+
+# 29/04/25 - Next step is to join the grouped results with the original DataFrame in a new column called Discrepancy 1 - SW Comment
+
+
+
+
+
+
+#def commentary(combined_result_df, output_dir="output"):
+"""
+    Generates commentary based on discrepancies in the DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame containing payroll data.
+    output_dir (str): Directory where the output CSV should be saved.
+
+    Returns:
+    pd.DataFrame: DataFrame with added commentary columns.
+    """
+# Step 1: Create a filtered DataFrame
+
+
+Discprepancy_1 = combined_result_df[combined_result_df['Discrepancy 1 - SW Map Expected / Client Map'] != 0]
+Discprepancy_2 = combined_result_df[combined_result_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] != 0]
+Discprepancy_3 = combined_result_df[combined_result_df['Discrepany 3 - SW Map Expected / Payroll paid'] != 0]
+
+# get unique QtrEMPLID for Discrepancy 1
+Discp1_unique_QtrEMPLID = Discprepancy_1['QtrEMPLID'].unique()   
+
+pd.DataFrame(Discp1_unique_QtrEMPLID, columns=['QtrEMPLID']).to_csv('Discp1_unique_QtrEMPLID.csv', index=False)
+
+
+# Where QtrEMPLID is in the list of unique QtrEMPLID for Discrepancy 1 find rows where combined_quarterly_summary['Client Mapping - OTE SG Expected'] - combined_quarterly_summary['SW Map - OTE SG expected'] != 0
+# and return the values in columns PayCode and Pay_Number
+
+
+
+combined_quarterly_summary_Discp1 = combined_quarterly_summary[combined_quarterly_summary['QtrEMPLID'].isin(Discp1_unique_QtrEMPLID)]
+
+
+
+
+
+# Client Mapping - OTE SG Expected	SW Map - OTE SG expected
+
+
+    
+    # Add more commentary logic as needed for other discrepancies
+
+    # Ensure the output directory exists
+    # os.makedirs(output_dir, exist_ok=True)
+
+    # # Define output file path
+    # filename = os.path.join(output_dir, "commentary_output.csv")
+    
+    # # Save to CSV
+    # df.to_csv(filename, index=False)
+
+    # print(f"Commentary file saved: {filename}")
+    
+    # return df
+
+
+
+
+    # Add more commentary logic as needed for other discrepancies
+
+    # Ensure the output directory exists
+    # os.makedirs(output_dir, exist_ok=True)
+
+    # # Define output file path
+    # filename = os.path.join(output_dir, "commentary_output.csv")
+    
+    # # Save to CSV
+    # df.to_csv(filename, index=False)
+
+    # print(f"Commentary file saved: {filename}")
+    
+    # return df
 
 
 # # Payroll_Period_Code =  merged_data
