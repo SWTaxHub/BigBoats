@@ -928,6 +928,9 @@ def find_discrepant_paycodes_grouped(
          relevant_rows['SW Map - OTE SG expected']) != 0
     ]
 
+
+    
+
     # Step 5: Create combined string: PayCode - Pay_Number
     mismatches['Paycode_Entry'] = mismatches['PayCode'].astype(str) + ' - ' + mismatches['Pay_Number'].astype(str)
 
@@ -939,6 +942,118 @@ def find_discrepant_paycodes_grouped(
 
     return grouped
 
+
+
+def find_discrepant_paycodes_grouped1(
+    combined_result_df: pd.DataFrame,
+    combined_quarterly_summary: pd.DataFrame,
+    discrepancy_column: str,
+    qtremplid_output_csv: str,
+    grouped_output_csv: str
+) -> pd.DataFrame:
+    """
+    Identifies discrepancies in SG Expected values, grouped by QtrEMPLID,
+    and concatenates PayCode and Pay_Number into a single string per QtrEMPLID.
+
+    Args:
+        combined_result_df: DataFrame with discrepancy flags and QtrEMPLID.
+        combined_quarterly_summary: DataFrame with SG expected values.
+        discrepancy_column: Name of column used to identify discrepancies.
+        qtremplid_output_csv: Path to save unique QtrEMPLIDs.
+        grouped_output_csv: Path to save grouped PayCode/Pay_Number results.
+
+    Returns:
+        DataFrame grouped by QtrEMPLID with concatenated PayCode and Pay_Number entries.
+    """
+
+    # Step 1: Get QtrEMPLIDs with discrepancies
+    flagged_ids = combined_result_df.loc[
+        combined_result_df[discrepancy_column] != 0, 'QtrEMPLID'
+    ].unique()
+
+    # Step 2: Save flagged QtrEMPLIDs
+    pd.DataFrame(flagged_ids, columns=['QtrEMPLID']).to_csv(qtremplid_output_csv, index=False)
+
+    # Step 3: Filter summary by QtrEMPLID
+    relevant_rows = combined_quarterly_summary[
+        combined_quarterly_summary['QtrEMPLID'].isin(flagged_ids)
+    ]
+
+    # Step 4: Apply mismatch condition
+    mismatches = relevant_rows[
+        (relevant_rows['Payroll - actual SG paid'] -
+         relevant_rows['Client Mapping - OTE SG Expected']) != 0
+    ]
+
+       
+
+    # Step 5: Create combined string: PayCode - Pay_Number
+    mismatches['Paycode_Entry'] = mismatches['PayCode'].astype(str) + ' - ' + mismatches['Pay_Number'].astype(str)
+
+    # Step 6: Group by QtrEMPLID
+    grouped = mismatches.groupby('QtrEMPLID')['Paycode_Entry'].apply(lambda x: ', '.join(x)).reset_index()
+
+    # Step 7: Save result
+    grouped.to_csv(grouped_output_csv, index=False)
+
+    return grouped
+
+
+def find_discrepant_paycodes_grouped2(
+    combined_result_df: pd.DataFrame,
+    combined_quarterly_summary: pd.DataFrame,
+    discrepancy_column: str,
+    qtremplid_output_csv: str,
+    grouped_output_csv: str
+) -> pd.DataFrame:
+    """
+    Identifies discrepancies in SG Expected values, grouped by QtrEMPLID,
+    and concatenates PayCode and Pay_Number into a single string per QtrEMPLID.
+
+    Args:
+        combined_result_df: DataFrame with discrepancy flags and QtrEMPLID.
+        combined_quarterly_summary: DataFrame with SG expected values.
+        discrepancy_column: Name of column used to identify discrepancies.
+        qtremplid_output_csv: Path to save unique QtrEMPLIDs.
+        grouped_output_csv: Path to save grouped PayCode/Pay_Number results.
+
+    Returns:
+        DataFrame grouped by QtrEMPLID with concatenated PayCode and Pay_Number entries.
+    """
+
+    # Step 1: Get QtrEMPLIDs with discrepancies
+    flagged_ids = combined_result_df.loc[
+        combined_result_df[discrepancy_column] != 0, 'QtrEMPLID'
+    ].unique()
+
+    # Step 2: Save flagged QtrEMPLIDs
+    pd.DataFrame(flagged_ids, columns=['QtrEMPLID']).to_csv(qtremplid_output_csv, index=False)
+
+    # Step 3: Filter summary by QtrEMPLID
+    relevant_rows = combined_quarterly_summary[
+        combined_quarterly_summary['QtrEMPLID'].isin(flagged_ids)
+    ]
+
+    # Step 4: Apply mismatch condition
+    mismatches = relevant_rows[
+        (relevant_rows['Payroll - actual SG paid'] -
+         relevant_rows['SW Map - OTE SG expected']) != 0
+    ]
+
+
+    # Step 5: Create combined string: PayCode - Pay_Number
+    mismatches['Paycode_Entry'] = mismatches['PayCode'].astype(str) + ' - ' + mismatches['Pay_Number'].astype(str)
+
+    # Step 6: Group by QtrEMPLID
+    grouped = mismatches.groupby('QtrEMPLID')['Paycode_Entry'].apply(lambda x: ', '.join(x)).reset_index()
+
+    # Step 7: Save result
+    grouped.to_csv(grouped_output_csv, index=False)
+
+    return grouped
+
+
+
 grouped_results = find_discrepant_paycodes_grouped(
     combined_result_df,
     combined_quarterly_summary,
@@ -948,11 +1063,39 @@ grouped_results = find_discrepant_paycodes_grouped(
 )
 
 
+grouped_results1 = find_discrepant_paycodes_grouped1(
+    combined_result_df,
+    combined_quarterly_summary,
+    discrepancy_column='Discrepancy 2 -  Client Map Expected / Payroll Paid',
+    qtremplid_output_csv='Discp2_QtrEMPLIDs.csv',
+    grouped_output_csv='Discp2_Grouped_Paycode_Entries.csv'
+)
+
+grouped_results2 = find_discrepant_paycodes_grouped2(
+    combined_result_df,
+    combined_quarterly_summary,
+    discrepancy_column='Discrepany 3 - SW Map Expected / Payroll paid',
+    qtremplid_output_csv='Discp3_QtrEMPLIDs.csv',
+    grouped_output_csv='Discp3_Grouped_Paycode_Entries.csv'
+)
+
+
+
 
 # 29/04/25 - Next step is to join the grouped results with the original DataFrame in a new column called Discrepancy 1 - SW Comment
 
 
+combined_result_df = combined_result_df.merge(grouped_results, on='QtrEMPLID', how='left')
+combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 1 - SW Comment'}, inplace=True)
 
+
+combined_result_df = combined_result_df.merge(grouped_results1, on='QtrEMPLID', how='left')
+combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 2 - SW Comment'}, inplace=True)
+
+combined_result_df = combined_result_df.merge(grouped_results2, on='QtrEMPLID', how='left')
+combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 3 - SW Comment'}, inplace=True)
+
+combined_result_df.to_csv('combined_result_with_comments.csv', index=False)
 
 
 
