@@ -146,6 +146,8 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
         "PL-VACC", "LOADING", "MEAL4", "BACK", "MVGARTH", "LOAD", "MEAL", "BONUS"
     ]
 
+    # S&W_paycodes = []
+
 
     # Get all unique values from both lists
     unique_paycodes = list(set(OTE_paycodesBigBoats + OTE_paycodesSW))
@@ -166,6 +168,14 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
         'OTE',
         'S&W'
     )
+
+    #  merged_data['SW mapping'] = np.where(
+    #     merged_data['PayCode'].isin(OTE_paycodesSW),
+    #     'OTE',
+    #     np.where(
+    #         merged_data['PayCode'] # N/a paycodes e.g. TAX
+    #     )'S&W'
+    # )
     
 
     
@@ -548,32 +558,6 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
 
 
 
-
-    # quarterly_summary['Count_of_Line_for_Unique_Pay_Number'] = (
-    # quarterly_summary.groupby('Pay_number')['Line'].transform('count')
-    # )
-
-
-    # Add column for Discrepancy 1 - SW Map Expected / Client Map
-    # quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'] = (quarterly_summary['Client - Exepected Minimum SG'] - quarterly_summary['SW - Exepected Minimum SG']).round(2)
-
-    # # Add column for Discrepancy 2 - Client Map - Expected Total SG
-
-    # quarterly_summary['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (quarterly_summary['Payroll - actual SG paid'] - quarterly_summary['Client Mapping - OTE SG Expected']).round(2)
-    
-    # # Add column for Discrepancy 3 - SW Map Expected / Payroll paid
-    # quarterly_summary['Discrepany 3 - SW Map Expected / Payroll paid'] = (quarterly_summary['Payroll - actual SG paid'] - quarterly_summary['SW Map - OTE SG expected']).round(2)
-    
-    # quarterly_summary['SW Comment - Discrepancy 1'] = ""
-    # quarterly_summary['SW Comment - Discrepancy 2'] = ""
-    # quarterly_summary['SW Comment - Discrepancy 3'] = ""
-    # quarterly_summary['SW - Final Comment'] = ""
-
-
-
-
-
-
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
@@ -607,14 +591,26 @@ if 'SW - Final Comment' not in combined_quarterly_summary.columns:
 
 
 
+# def generate_comment(row):
+#     if row['Client Mapping - OTE SG Expected'] == 0:
+    
+#         #return f"Client Mapping didn't make payment under this line {row['Line_ID']} Description: {row['Description']}"
+#         return f"Client Mapping didn't classify line: {row['Line_ID']} as OTE"
+#     elif row['SW Map - OTE SG expected'] == 0:
+#         return f"SW Mapping didn't classify line: {row['Line_ID']} as OTE"
+#     else:
+#         return row.get('Discrepancy 1 - SW Comment', '')
+
 def generate_comment(row):
-    if row['Client Mapping - OTE SG Expected'] == 0:
-        #return f"Client Mapping didn't make payment under this line {row['Line_ID']} Description: {row['Description']}"
-        return f"Client Mapping didn't classify line: {row['Line_ID']} as OTE"
-    elif row['SW Map - OTE SG expected'] == 0:
-        return f"SW Mapping didn't classify line: {row['Line_ID']} as OTE"
+    if row['SW mapping'] == 'OTE' and row['Client Mapping'] == 'N':
+        return f"No payment under Client Mapping {row['Line_ID']} Description: {row['Description']}"
+        
+    elif row['SW mapping'] == 'S&W' and row['Client Mapping'] == 'Y':
+        return f"SW Mapping didn't classify line: {row['Line_ID']} Description: {row['Description']} as OTE"
+    
     else:
-        return row.get('Discrepancy 1 - SW Comment', '')
+        return row.get('Discrepancy 1 - SW Comment', None)
+
 
 
 
@@ -824,9 +820,15 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
 
 
 
-
-    grouped_df['Above / Met cap'] = np.where(grouped_df['SW Mapping - OTE'] > grouped_df['MCB'], 'Above / met cap', 
+    # Add second column for Client so there will be one sw and one client Above / Met Cap
+    grouped_df['Above / Met cap (SW Map)'] = np.where(grouped_df['SW Mapping - OTE'] > grouped_df['MCB'], 'Above / met cap', 
         np.where(grouped_df['SW Mapping - OTE'] < grouped_df['MCB'], 'Below cap', "N/A"))
+    
+    grouped_df['Above / Met cap (Client Map)'] = np.where(grouped_df['Client mapping - OTE'] > grouped_df['MCB'], 'Above / met cap',
+        np.where(grouped_df['Client mapping - OTE'] < grouped_df['MCB'], 'Below cap', "N/A"))
+    
+
+    
     
 
     # Add column for Discrepancy 1 - SW Map Expected / Client Map
@@ -846,7 +848,8 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
        'SW Mapping - S&W', 'Client Mapping - OTE SG Expected',
        'SW Map - OTE SG expected', 'SW Map - S&W SG',
        'Payroll - actual SG paid', 'SCH - actual SG received', 'MCB',
-       'Above / Met cap',
+       'Above / Met cap (SW Map)',
+       'Above / Met cap (Client Map)'
         'Payroll - actual SG paid_CumSum',
         'Client Mapping - OTE SG Expected_CumSum',
         'SW Map - OTE SG expected_CumSum',
@@ -861,13 +864,25 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
     grouped_df = grouped_df[column_order]
 
 
-    mask = grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] == 0
+    mask = (
+        (grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] >= 0.07) |
+        (grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] <= -0.07)
+    )
+
     grouped_df.loc[mask, 'Discrepancy 1 - SW Comment'] = np.nan
 
-    mask1 = grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] == 0
+    mask1 = (
+        (grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] >= 0.07) |
+        (grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] <= -0.07)
+    )
+
     grouped_df.loc[mask1, 'Discrepancy 2 - SW Comment'] = np.nan
 
-    mask2 = grouped_df['Discrepany 3 - SW Map Expected / Payroll paid'] == 0
+    mask2 = (
+        (grouped_df['Discrepany 3 - SW Map Expected / Payroll paid'] >= 0.07) |
+        (grouped_df['Discrepany 3 - SW Map Expected / Payroll paid'] <= -0.07)
+    )
+
     grouped_df.loc[mask2, 'Discrepancy 3 - SW Comment'] = np.nan
 
 
