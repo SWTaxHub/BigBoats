@@ -555,14 +555,14 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
 
 
     # Add column for Discrepancy 1 - SW Map Expected / Client Map
-    quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'] = (quarterly_summary['Client - Exepected Minimum SG'] - quarterly_summary['SW - Exepected Minimum SG']).round(2)
+    # quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'] = (quarterly_summary['Client - Exepected Minimum SG'] - quarterly_summary['SW - Exepected Minimum SG']).round(2)
 
-    # Add column for Discrepancy 2 - Client Map - Expected Total SG
+    # # Add column for Discrepancy 2 - Client Map - Expected Total SG
 
-    quarterly_summary['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (quarterly_summary['Payroll - actual SG paid'] - quarterly_summary['Client Mapping - OTE SG Expected']).round(2)
+    # quarterly_summary['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (quarterly_summary['Payroll - actual SG paid'] - quarterly_summary['Client Mapping - OTE SG Expected']).round(2)
     
-    # Add column for Discrepancy 3 - SW Map Expected / Payroll paid
-    quarterly_summary['Discrepany 3 - SW Map Expected / Payroll paid'] = (quarterly_summary['Payroll - actual SG paid'] - quarterly_summary['SW Map - OTE SG expected']).round(2)
+    # # Add column for Discrepancy 3 - SW Map Expected / Payroll paid
+    # quarterly_summary['Discrepany 3 - SW Map Expected / Payroll paid'] = (quarterly_summary['Payroll - actual SG paid'] - quarterly_summary['SW Map - OTE SG expected']).round(2)
     
     # quarterly_summary['SW Comment - Discrepancy 1'] = ""
     # quarterly_summary['SW Comment - Discrepancy 2'] = ""
@@ -596,13 +596,54 @@ quarterly_summary_OFF['Entity'] = 'OFFSHORE'
 combined_quarterly_summary = pd.concat([quarterly_summary_OFF, quarterly_summary_LAB], ignore_index=True)
 
 
+
+
+combined_quarterly_summary['Line_ID'] = combined_quarterly_summary['Pay_Number'].astype(str) + '_' + combined_quarterly_summary['Line'].astype(str)
+
+
+if 'SW - Final Comment' not in combined_quarterly_summary.columns:
+    combined_quarterly_summary['Discrepancy 1 - SW Comment'] = ''
+
+
+
+
+def generate_comment(row):
+    if row['Client Mapping - OTE SG Expected'] == 0:
+        #return f"Client Mapping didn't make payment under this line {row['Line_ID']} Description: {row['Description']}"
+        return f"Client Mapping didn't classify line: {row['Line_ID']} as OTE"
+    elif row['SW Map - OTE SG expected'] == 0:
+        return f"SW Mapping didn't classify line: {row['Line_ID']} as OTE"
+    else:
+        return row.get('Discrepancy 1 - SW Comment', '')
+
+
+
+
+
+
+
+combined_quarterly_summary['Discrepancy 1 - SW Comment'] = combined_quarterly_summary.apply(generate_comment, axis=1)
+
+
+
 combined_quarterly_summary.to_csv('Payroll_Detail.csv', index=False)
+# Problem is that its looking at the current data frame not the instance of the data frame that was used to create the grouped results
+
+# If Payroll - actual SG paid_CumSum == 0 then SW - Final Comment = "SG paid is 0" in paynumber
+
 
 
 
 
 # Need to create a dataframe that gets the total for quarter rather than the individual pay numbers
 quarter_sum = combined_quarterly_summary
+
+
+
+
+
+
+
 
 
 agg_methods = {\
@@ -630,9 +671,11 @@ agg_methods = {\
         'MCB' : 'first',
         'Payroll - actual SG paid_CumSum' : 'last',
         'Client Mapping - OTE SG Expected_CumSum' : 'last',
-        'SW Map - OTE SG expected_CumSum' : 'last'
+        'SW Map - OTE SG expected_CumSum' : 'last',
+        #'Discrepancy 1 - SW Comment': 'first'
 
     }
+
 
 # Check if required columns exist in DataFrame
 group_by_columns = ['QtrEMPLID', 'Pay_Number']
@@ -644,19 +687,56 @@ if missing_cols:
     # Perform aggregation
 quarter_sum = quarter_sum.groupby(group_by_columns).agg(agg_methods).reset_index()
 
+#quarter_sum['Discrepancy 1 - SW Comment'] =''
 
-# quarter_sum['Count_of_Line_for_Unique_Pay_Number'] = (
-# quarter_sum.groupby('Pay_number')['Line'].transform('count')
-#      )
+# Group by 'Pay_Number' and concatenate 'Discrepancy 1 - SW Comment' values
+comment_concat = (
+    combined_quarterly_summary
+    .groupby('Pay_Number')['Discrepancy 1 - SW Comment']
+    .apply(lambda x: ' | '.join(x.dropna().astype(str)))
+    .reset_index()
+)
 
 
-    #quarter_sum['Quarter_Payroll - actual SG paid_CumSum'] = quarter_sum.groupby(['Pay_Number'])['Payroll - actual SG paid_CumSum'].cumsum()
 
-    # quarterly_summary['Client Mapping - OTE SG Expected_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['Client Mapping - OTE SG Expected'].cumsum()
+# Merge the concatenated comment back correctly
+quarter_sum = quarter_sum.merge(comment_concat, on='Pay_Number', how='left')
 
-    # quarterly_summary['SW Map - OTE SG expected_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['SW Map - OTE SG expected'].cumsum()
-                                                 
-       
+# Rename the merged column to match your naming standard (optional)
+# quarter_sum = quarter_sum.rename(columns={
+#     'Discrepancy 1 - SW Comment': 'Discrepancy_1_SW_Comment_Concat'
+# })
+
+
+
+
+def generate_comment1(row):
+    if row['Payroll - actual SG paid'] == 0:
+        return f"No Super was paid under pay run number: {row['Pay_Number']}"
+    elif row['Client Mapping - OTE SG Expected'] == 0:
+        return f"Client Mapping didn't make payment under pay run number: {row['Pay_Number']}"
+    else:
+        return row.get('Discrepancy 2 - SW Comment', '')
+
+
+
+def generate_comment2(row):
+    if row['Payroll - actual SG paid'] == 0:
+        return f"No Super was paid under pay run number: {row['Pay_Number']}"
+    elif row['SW Map - OTE SG expected'] == 0:
+        return f"SW Mapping didn't make payment under pay run number: {row['Pay_Number']}"
+    else:
+        return row.get('Discrepancy 3 - SW Comment', '')
+
+
+
+quarter_sum['Discrepancy 2 - SW Comment'] = quarter_sum.apply(generate_comment1, axis=1)
+quarter_sum['Discrepancy 3 - SW Comment'] = quarter_sum.apply(generate_comment2, axis=1)
+
+
+
+
+
 quarter_sum.to_csv('Quarterly_Sum.csv', index=False)
 
 
@@ -705,8 +785,37 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
     # Perform aggregation
     grouped_df = df.groupby(group_by_columns).agg(agg_methods).reset_index()
 
+    comment_concat = (
+        quarter_sum
+        .groupby('QtrEMPLID')['Discrepancy 1 - SW Comment']
+        .apply(lambda x: ' | '.join(x.dropna().astype(str)))   
+        .reset_index()
+
+    )
 
 
+        # Group by 'Pay_Number' and concatenate 'Discrepancy 1 - SW Comment' values
+    comment_concat1 = (
+        quarter_sum
+        .groupby('QtrEMPLID')['Discrepancy 2 - SW Comment']
+        .apply(lambda x: ' | '.join(x.dropna().astype(str)))
+        .reset_index()
+    )
+
+    comment_concat2 = (
+        quarter_sum
+        .groupby('QtrEMPLID')['Discrepancy 3 - SW Comment']
+        .apply(lambda x: ' | '.join(x.dropna().astype(str)))
+        .reset_index()
+    )
+
+
+    # Merge the concatenated comment back correctly
+    grouped_df = grouped_df.merge(comment_concat, on='QtrEMPLID', how='left')
+
+    grouped_df = grouped_df.merge(comment_concat1, on='QtrEMPLID', how='left')
+
+    grouped_df = grouped_df.merge(comment_concat2, on='QtrEMPLID', how='left')
 
     columns_to_drop = ['Pay_Number', 'Line', 'Hours/Value', 'Pay_Rate', 'Description', 'Total']
      # Drop unneeded columns if provided
@@ -732,6 +841,36 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
     
    
 
+    column_order = ['Entity', 'QtrEMPLID', 'Emp.Code', 'Full_Name', 'SG_Rate', 'FY_Q',
+       'Financial_Year', 'Client mapping - OTE', 'SW Mapping - OTE',
+       'SW Mapping - S&W', 'Client Mapping - OTE SG Expected',
+       'SW Map - OTE SG expected', 'SW Map - S&W SG',
+       'Payroll - actual SG paid', 'SCH - actual SG received', 'MCB',
+       'Above / Met cap',
+        'Payroll - actual SG paid_CumSum',
+        'Client Mapping - OTE SG Expected_CumSum',
+        'SW Map - OTE SG expected_CumSum',
+        'Discrepancy 1 - SW Map Expected / Client Map',
+       'Discrepancy 2 -  Client Map Expected / Payroll Paid',
+       'Discrepany 3 - SW Map Expected / Payroll paid',
+       'Discrepancy 1 - SW Comment', 'Discrepancy 2 - SW Comment',
+       'Discrepancy 3 - SW Comment']
+
+        
+    # Reorder the DataFrame columns
+    grouped_df = grouped_df[column_order]
+
+
+    mask = grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] == 0
+    grouped_df.loc[mask, 'Discrepancy 1 - SW Comment'] = np.nan
+
+    mask1 = grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] == 0
+    grouped_df.loc[mask1, 'Discrepancy 2 - SW Comment'] = np.nan
+
+    mask2 = grouped_df['Discrepany 3 - SW Map Expected / Payroll paid'] == 0
+    grouped_df.loc[mask2, 'Discrepancy 3 - SW Comment'] = np.nan
+
+
 
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
@@ -750,137 +889,23 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
 
 
 
-# def SG_actual_Vs_SW_Map(df, output_dir="output", file_suffix="LABOUR"):
-#     # Define aggregation methods
-#     agg_methods = {\
-#         'Emp.Code' : 'first',
-#         'Full_Name': 'first',  
-#         'Pay_Number': 'first',
-#         'Line': 'first',
-#         'Hours/Value': 'sum',
-#         'Pay_Rate': 'mean',
-#         'Total': 'sum',
-#         'SG_Rate': 'mean',
-#         'FY_Q': 'first',
-#         'Financial_Year': 'first', 
-#         #'Client Mapping': 'first',
-#         #'SW mapping': 'first',
-#         'Client mapping - OTE': 'sum',
-#         'SW Mapping - OTE': 'sum',
-#         'SW Mapping - S&W': 'sum',
-#         'Client Mapping - OTE SG Expected': 'sum',
-#         'SW Map - OTE SG expected': 'sum', 
-#         'SW Map - S&W SG': 'sum',
-#         'Payroll - actual SG paid': 'sum', 
-#         'SCH - actual SG received': 'sum',
-#         'MCB' : 'first',
-#         'Payroll - actual SG paid_CumSum' : 'last',
-#         'Client Mapping - OTE SG Expected_CumSum' : 'last',
-#         'SW Map - OTE SG expected_CumSum' : 'last'
-
-#     }
-
-#     # Check if required columns exist in DataFrame
-#     group_by_columns = ['QtrEMPLID']
-#     missing_cols = [col for col in group_by_columns if col not in df.columns]
-
-#     if missing_cols:
-#         raise ValueError(f"Missing columns in DataFrame: {missing_cols}")
-
-#     # Perform aggregation
-#     grouped_df = df.groupby(group_by_columns).agg(agg_methods).reset_index()
-
-
-#     # columns_to_drop = ['Pay_Number', 'Line', 'Hours/Value', 'Pay_Rate', 'Description', 'Total', 'Client Mapping', 'SW mapping']
-
-#     columns_to_drop = ['Pay_Number', 'Line', 'Hours/Value', 'Pay_Rate', 'Description', 'Total']
-#      # Drop unneeded columns if provided
-   
-#     grouped_df = grouped_df.drop(columns=columns_to_drop, errors='ignore')  # ignore errors if columns don't exist
-
-
-
-
-#     grouped_df['Above / Met cap'] = np.where(grouped_df['SW Mapping - OTE'] > grouped_df['MCB'], 'Above / met cap', 
-#         np.where(grouped_df['SW Mapping - OTE'] < grouped_df['MCB'], 'Below cap', "N/A"))
-    
-
-
-#     # grouped_df['Payroll - actual SG paid_CumSum'] / combined_quarterly_summary[]
-
-#     # grouped_df['Client Mapping - OTE SG Expected_CumSum'] 
-
-#     # grouped_df['SW Map - OTE SG expected_CumSum'] 
-    
-
-#     # Add column for Discrepancy 1 - SW Map Expected / Client Map
-#     grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] = (grouped_df['Client Mapping - OTE SG Expected'] - grouped_df['SW Map - OTE SG expected']).round(0)
-
-#     # Add column for Discrepancy 2 - Client Map - Expected Total SG
-
-#     grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['Client Mapping - OTE SG Expected']).round(0)
-    
-#     # Add column for Discrepancy 3 - SW Map Expected / Payroll paid
-#     grouped_df['Discrepany 3 - SW Map Expected / Payroll paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['SW Map - OTE SG expected']).round(0)
-    
-   
-    
-
-
-
-#     # Commented out 29/04/2025
-#     # grouped_df['Payroll_Vs_SW_Expected_Min_SG'] = grouped_df['Payroll - actual SG paid'] - grouped_df['SW - Exepected Minimum SG']
-
-#     # grouped_df['Payroll_Vs_Client_Expected_Min_SG'] = grouped_df['Payroll - actual SG paid'] - grouped_df['Client - Exepected Minimum SG']
-
-#     # Ensure the output directory exists
-#     os.makedirs(output_dir, exist_ok=True)
-
-#     # Define output file path
-#     #filename = os.path.join(output_dir, f"SG_actual_Vs_SW_Map_{file_suffix}.csv")
-#     filename = os.path.join(output_dir, f"SG_Quarterly_{file_suffix}.csv")
-#     # Save to CSV
-#     grouped_df.to_csv(filename, index=False)
-
-#     print(f"File saved: {filename}")
-#     return grouped_df
-
-# # Call the function with your DataFrame
-# result_df_OFF = SG_actual_Vs_SW_Map(quarterly_summary_OFF, file_suffix='OFFSHORE')
-# result_df_OFF['Entity'] = 'OFFSHORE'
-# result_df_LAB = SG_actual_Vs_SW_Map(quarterly_summary_LAB, file_suffix='LABOUR')
-# result_df_LAB['Entity'] = 'LABOUR'
-# # Combine the results into a single DataFrame
-
-
-# combined_result_df = pd.concat([result_df_OFF, result_df_LAB], ignore_index=True)
 
 output_dir="output"
 combined_result_df = SG_actual_Vs_SW_Map(quarter_sum)
 
 print(combined_result_df.columns)
 
-column_order = ['Entity', 'QtrEMPLID', 'Emp.Code', 'Full_Name', 'SG_Rate', 'FY_Q',
-       'Financial_Year', 'Client mapping - OTE', 'SW Mapping - OTE',
-       'SW Mapping - S&W', 'Client Mapping - OTE SG Expected',
-       'SW Map - OTE SG expected', 'SW Map - S&W SG',
-       'Payroll - actual SG paid', 'SCH - actual SG received', 'MCB',
-       'Above / Met cap',
-        'Payroll - actual SG paid_CumSum',
-        'Client Mapping - OTE SG Expected_CumSum',
-        'SW Map - OTE SG expected_CumSum',
-        'Discrepancy 1 - SW Map Expected / Client Map',
-       'Discrepancy 2 -  Client Map Expected / Payroll Paid',
-       'Discrepany 3 - SW Map Expected / Payroll paid']
 
-        
-    # Reorder the DataFrame columns
-combined_result_df = combined_result_df[column_order]
+   
 
 
 
 filename = os.path.join(output_dir, f"SG_Quarterly_BothEntities.csv")
 combined_result_df.to_csv(filename, index=False)
+
+
+
+
 
 
 
@@ -932,8 +957,9 @@ def find_discrepant_paycodes_grouped(
     
 
     # Step 5: Create combined string: PayCode - Pay_Number
-    mismatches['Paycode_Entry'] = mismatches['PayCode'].astype(str) + ' - ' + mismatches['Pay_Number'].astype(str)
+    #mismatches['Paycode_Entry'] = mismatches['PayCode'].astype(str) + ' - ' + mismatches['Pay_Number'].astype(str)
 
+    mismatches['Paycode_Entry'] = mismatches['Pay_Number'].astype(str)
     # Step 6: Group by QtrEMPLID
     grouped = mismatches.groupby('QtrEMPLID')['Paycode_Entry'].apply(lambda x: ', '.join(x)).reset_index()
 
@@ -944,9 +970,16 @@ def find_discrepant_paycodes_grouped(
 
 
 
+
+
+
+
+
+
+
 def find_discrepant_paycodes_grouped1(
     combined_result_df: pd.DataFrame,
-    combined_quarterly_summary: pd.DataFrame,
+    quarter_sum: pd.DataFrame,
     discrepancy_column: str,
     qtremplid_output_csv: str,
     grouped_output_csv: str
@@ -975,9 +1008,11 @@ def find_discrepant_paycodes_grouped1(
     pd.DataFrame(flagged_ids, columns=['QtrEMPLID']).to_csv(qtremplid_output_csv, index=False)
 
     # Step 3: Filter summary by QtrEMPLID
-    relevant_rows = combined_quarterly_summary[
-        combined_quarterly_summary['QtrEMPLID'].isin(flagged_ids)
-    ]
+    # relevant_rows = combined_quarterly_summary[
+    #     combined_quarterly_summary['QtrEMPLID'].isin(flagged_ids)
+    # ]
+
+    relevant_rows = quarter_sum[quarter_sum['QtrEMPLID'].isin(flagged_ids)]
 
     # Step 4: Apply mismatch condition
     mismatches = relevant_rows[
@@ -988,8 +1023,8 @@ def find_discrepant_paycodes_grouped1(
        
 
     # Step 5: Create combined string: PayCode - Pay_Number
-    mismatches['Paycode_Entry'] = mismatches['PayCode'].astype(str) + ' - ' + mismatches['Pay_Number'].astype(str)
-
+   # mismatches['Paycode_Entry'] = mismatches['PayCode'].astype(str) + ' - ' + mismatches['Pay_Number'].astype(str)
+    mismatches['Paycode_Entry'] = mismatches['Pay_Number'].astype(str)
     # Step 6: Group by QtrEMPLID
     grouped = mismatches.groupby('QtrEMPLID')['Paycode_Entry'].apply(lambda x: ', '.join(x)).reset_index()
 
@@ -1001,7 +1036,7 @@ def find_discrepant_paycodes_grouped1(
 
 def find_discrepant_paycodes_grouped2(
     combined_result_df: pd.DataFrame,
-    combined_quarterly_summary: pd.DataFrame,
+    quarter_sum: pd.DataFrame,
     discrepancy_column: str,
     qtremplid_output_csv: str,
     grouped_output_csv: str
@@ -1065,7 +1100,7 @@ grouped_results = find_discrepant_paycodes_grouped(
 
 grouped_results1 = find_discrepant_paycodes_grouped1(
     combined_result_df,
-    combined_quarterly_summary,
+    quarter_sum,
     discrepancy_column='Discrepancy 2 -  Client Map Expected / Payroll Paid',
     qtremplid_output_csv='Discp2_QtrEMPLIDs.csv',
     grouped_output_csv='Discp2_Grouped_Paycode_Entries.csv'
@@ -1073,7 +1108,7 @@ grouped_results1 = find_discrepant_paycodes_grouped1(
 
 grouped_results2 = find_discrepant_paycodes_grouped2(
     combined_result_df,
-    combined_quarterly_summary,
+    quarter_sum,
     discrepancy_column='Discrepany 3 - SW Map Expected / Payroll paid',
     qtremplid_output_csv='Discp3_QtrEMPLIDs.csv',
     grouped_output_csv='Discp3_Grouped_Paycode_Entries.csv'
@@ -1086,17 +1121,21 @@ grouped_results2 = find_discrepant_paycodes_grouped2(
 
 
 combined_result_df = combined_result_df.merge(grouped_results, on='QtrEMPLID', how='left')
-combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 1 - SW Comment'}, inplace=True)
+combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 1 - Source'}, inplace=True)
 
 
 combined_result_df = combined_result_df.merge(grouped_results1, on='QtrEMPLID', how='left')
-combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 2 - SW Comment'}, inplace=True)
+combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 2 - Source'}, inplace=True)
 
 combined_result_df = combined_result_df.merge(grouped_results2, on='QtrEMPLID', how='left')
-combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 3 - SW Comment'}, inplace=True)
+combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 3 - Source'}, inplace=True)
 
 
-combined_result_df['SW - Final Comment'] = ""
+
+
+
+
+
 
 combined_result_df.to_csv('combined_result_with_comments.csv', index=False)
 
