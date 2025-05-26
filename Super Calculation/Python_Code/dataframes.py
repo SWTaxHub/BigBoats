@@ -250,7 +250,9 @@ def process_payroll_data(directory):
 
 
     # Drop rows where the 'Code' column has no value (NaN or empty)
-    all_years_payHist['Pay_Number'] = all_years_payHist['Pay_Number'].fillna(0).astype(int)
+    
+    all_years_payHist['Pay_Number'] = pd.to_numeric(all_years_payHist['Pay_Number'], errors='coerce').fillna(0).astype(int)
+
 
     all_years_payHist.dropna(subset=['PayCode'], inplace=True)
     print(all_years_payHist.columns)
@@ -412,13 +414,13 @@ superClearningHouseTPD = pd.DataFrame()
 
 superClearningHouseTPD = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx"
 
-# Read data from Excel for super clearing house sheet called Append1
-superClearingHouse = pd.read_excel(
-    r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx",
-    sheet_name=['Append1']  # Specifying the sheet to read
-)
-# Access the specific sheet's data
-superClearingHouseData = superClearingHouse['Append1']    
+# # Read data from Excel for super clearing house sheet called Append1
+# superClearingHouse = pd.read_excel(
+#     r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx",
+#     sheet_name=['Append1']  # Specifying the sheet to read
+# )
+# # Access the specific sheet's data
+# superClearingHouseData = superClearingHouse['Append1']    
 
 
 
