@@ -17,10 +17,9 @@ import pandas as pd
 import numpy as np
 
 
-
 # File paths
 #Declare File path for Labour Payroll
-Payroll_Labour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Documents\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR"
+Payroll_Labour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
 
 #Declare File path for Offshore Payroll
 Payroll_Offshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll"
@@ -145,7 +144,7 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
     
     # Read Paycode Mapping
 
-    PayMap = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\2025.05.08_PAYCODE_MAPPING.xlsx"
+    PayMap = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\2025.05.21_PAYCODE_MAPPING.xlsx"
 
     paycode_mapping = pd.read_excel(PayMap, sheet_name='UPDATED MAPPING')
 
@@ -177,7 +176,9 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
     print(len(OTE_paycodesSW))
 
     SUPER_paycodesSW = paycode_mapping.loc[
-        paycode_mapping['SW MAP'] == 'SUPER', 'Combined_PayCode'
+        # Amendment 27/05/25
+        #paycode_mapping['SW MAP'] == 'SUPER', 'Combined_PayCode'
+        paycode_mapping['SW MAP'] == 'SUPER - SG', 'Combined_PayCode'
     ].dropna().tolist()
 
     print("Super Paycodes")
@@ -986,8 +987,8 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
 
 
     
-    grouped_df.loc[mask, 'Discrepancy 1 - SW Comment'] = np.nan
-    grouped_df.loc[mask, 'Discrepancy 2 - SW Comment'] = np.nan
+    grouped_df.loc[mask, 'Discrepancy 1 - SW Comment'] = "No Discrepancy / Immaterial"
+    #grouped_df.loc[mask, 'Discrepancy 2 - SW Comment'] = "No Discrepancy / Immaterial"
 
     
     mask1 = (
@@ -995,14 +996,14 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
         (grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] < 0.08)
     )
 
-    grouped_df.loc[mask1, 'Discrepancy 2 - SW Comment'] = np.nan
+    grouped_df.loc[mask1, 'Discrepancy 2 - SW Comment'] = "No Discrepancy / Immaterial"
 
     mask2 = (
         (grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid'] > -0.08) &
         (grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid'] < 0.08)
     )
 
-    grouped_df.loc[mask2, 'Discrepancy 3 - SW Comment'] = np.nan
+    grouped_df.loc[mask2, 'Discrepancy 3 - SW Comment'] = "No Discrepancy / Immaterial"
 
 
    
