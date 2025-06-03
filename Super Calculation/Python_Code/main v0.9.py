@@ -15,7 +15,7 @@ from dataframes import(
 )
 import pandas as pd
 import numpy as np
-
+from pandas import ExcelWriter
 
 # File paths
 #Declare File path for Labour Payroll
@@ -278,6 +278,10 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
         merged_data['Total'] * merged_data['SG_Rate'],
         0
     )
+
+    merged_data['Client Mapping - OTE SG Expected'] = merged_data['Client Mapping - OTE SG Expected'].astype(float).round(2)
+
+    
     
     merged_data['SW Map - OTE SG expected'] = np.where(
         merged_data['Combined_PayCode'].isin(OTE_paycodesSW),
@@ -285,6 +289,7 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
         0
     )
 
+    merged_data['SW Map - OTE SG expected'] = merged_data['SW Map - OTE SG expected'].astype(float).round(2)
 
 
     merged_data['SW Map - S&W SG'] = merged_data['SW Mapping - S&W'] * merged_data['SG_Rate']
@@ -399,8 +404,11 @@ def calculate_shortfall_offset(mergedData_Labour):
         'SCH - actual SG received': 'sum'
     }
 
+
     df1 = mergedData_Labour.groupby(['Period_Ending', 'Pay_Number', 'Emp.Code']).agg(agg_methods).reset_index()
     df1 = df1.sort_values(by=['Emp.Code', 'Period_Ending'])
+
+    df1['Pay_Rate'] = df1['Pay_Rate'].astype(float).round(2)
 
     df1['SW Map - OTE SG expected'] = df1['SW Map - OTE SG expected'].round(2)
     df1['Shortfall SG'] = df1['Payroll - actual SG paid'] - df1['SW Map - OTE SG expected']
@@ -559,6 +567,7 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         .reset_index()
     )
     
+    quarterly_summary['Pay_Rate'] = quarterly_summary['Pay_Rate'].astype(float).round(2)
 
 
      # Drop unneeded columns if provided
@@ -600,6 +609,9 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         )
     )
 
+    quarterly_summary['SW - Exepected Minimum SG'] = quarterly_summary['SW - Exepected Minimum SG'].astype(float).round(2)
+
+
 
 
     # Add Column Client - Expected Minimum SG
@@ -613,8 +625,14 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         )
     )
 
+    quarterly_summary['Client - Exepected Minimum SG'] = quarterly_summary['Client - Exepected Minimum SG'].astype(float).round(2)
+
+
+
     quarterly_summary['Above / Met cap'] = np.where(quarterly_summary['SW Mapping - OTE'] > quarterly_summary['MCB'], 'Above / met cap', 
         np.where(quarterly_summary['SW Mapping - OTE'] < quarterly_summary['MCB'], 'Below cap', "N/A"))
+    
+
     
 
     quarterly_summary['Payroll - actual SG paid_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['Payroll - actual SG paid'].cumsum()
@@ -671,9 +689,10 @@ if 'SW - Final Comment' not in combined_quarterly_summary.columns:
 def generate_comment(row):
     if row['SW mapping'] == 'OTE' and row['Client Mapping'] == 'N':
         return f"No payment under Client Mapping {row['Line_ID']} Description: {row['Description']}"
-        
-    elif row['SW mapping'] == 'S&W' and row['Client Mapping'] == 'Y':
-        return f"SW Mapping didn't classify line: {row['Line_ID']} Description: {row['Description']} as OTE"
+    
+    
+    elif row['Client Mapping'] == 'Y' and row['SW mapping'] != 'OTE':
+        return f"Overpayment, SW Mapping didn't classify {row['Line_ID']} Description: {row['Description']} as OTE"
     
     else:
         return row.get('Discrepancy 1 - SW Comment', None)
@@ -681,15 +700,19 @@ def generate_comment(row):
 
 
     # Add column for Discrepancy 1 - SW Map Expected / Client Map
-    grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] = (grouped_df['Client Mapping - OTE SG Expected'] - grouped_df['SW Map - OTE SG expected']).round(2)
+combined_quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'] = (combined_quarterly_summary['Client Mapping - OTE SG Expected'] - combined_quarterly_summary['SW Map - OTE SG expected']).round(2)
+
+combined_quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'] = combined_quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'].astype(float).round(2)
 
     # Add column for Discrepancy 2 - Client Map - Expected Total SG
 
-    grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['Client Mapping - OTE SG Expected']).round(2)
+combined_quarterly_summary['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (combined_quarterly_summary['Payroll - actual SG paid'] - combined_quarterly_summary['Client Mapping - OTE SG Expected']).round(2)
     
-    # Add column for Discrepancy 3 - SW Map Expected / Payroll paid
-    grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['SW Map - OTE SG expected']).round(2)
+combined_quarterly_summary['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = combined_quarterly_summary['Discrepancy 2 -  Client Map Expected / Payroll Paid'].astype(float).round(2)
+# Add column for Discrepancy 3 - SW Map Expected / Payroll paid
+combined_quarterly_summary['Discrepancy 3 - SW Map Expected / Payroll paid'] = (combined_quarterly_summary['Payroll - actual SG paid'] - combined_quarterly_summary['SW Map - OTE SG expected']).round(2)
 
+combined_quarterly_summary['Discrepancy 3 - SW Map Expected / Payroll paid'] = combined_quarterly_summary['Discrepancy 3 - SW Map Expected / Payroll paid'].astype(float).round(2)
 
 
 combined_quarterly_summary['Discrepancy 1 - SW Comment'] = combined_quarterly_summary.apply(generate_comment, axis=1)
@@ -747,6 +770,10 @@ agg_methods = {\
     }
 
 
+
+
+
+
 # Check if required columns exist in DataFrame
 group_by_columns = ['QtrEMPLID', 'Pay_Number']
 missing_cols = [col for col in group_by_columns if col not in quarter_sum.columns]
@@ -756,6 +783,9 @@ if missing_cols:
 
     # Perform aggregation
 quarter_sum = quarter_sum.groupby(group_by_columns).agg(agg_methods).reset_index()
+
+
+quarter_sum['Pay_Rate'] = quarter_sum['Pay_Rate'].astype(float).round(2)
 
 #quarter_sum['Discrepancy 1 - SW Comment'] =''
 
@@ -859,8 +889,6 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
     # Perform aggregation
     grouped_df = df.groupby(group_by_columns).agg(agg_methods).reset_index()
 
-
-    
 
 
     comment_concat = (
@@ -1299,13 +1327,30 @@ combined_result_df.rename(columns={'Paycode_Entry': 'Discrepancy 3 - Source'}, i
 
 
 
+# combined_result_df['Discrepancy 1 - SW Map Expected / Client Map'] = combined_result_df['Discrepancy 1 - SW Map Expected / Client Map'].round(2)
+# combined_result_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = combined_result_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'].round(2)
+# combined_result_df['Discrepancy 3 - SW Map Expected / Payroll paid'] = combined_result_df['Discrepancy 3 - SW Map Expected / Payroll paid'].round(2)
 
 
 
 
+dataframes = [combined_result_df, quarter_sum, combined_quarterly_summary]
 
 combined_result_df.to_csv('combined_result_with_comments.csv', index=False)
 
+
+
+
+sheet_names = ['Result', 'Quarterly Summary', 'Payroll Detail']
+
+
+output_excel = 'client_payroll_analysis.xlsx'
+
+
+# Write each DataFrame to a separate sheet
+with pd.ExcelWriter(output_excel, engine='xlsxwriter') as writer:
+    for df, sheet_name in zip(dataframes, sheet_names):
+        df.to_excel(writer, sheet_name=sheet_name, index=False)
 
 
 #def commentary(combined_result_df, output_dir="output"):
