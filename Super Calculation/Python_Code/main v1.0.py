@@ -1239,7 +1239,7 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
        #'SCH - actual SG received', 
        'MCB',
        'Client Map - OTE SG (Capped to MCB)',
-       
+       'SW Map - OTE SG (Capped to MCB)',
        #'SG up to MCB client map',
        #'SG up to MCB SW map',
        'Payroll - actual SG paid', 
