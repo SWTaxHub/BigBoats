@@ -15,7 +15,9 @@ from dataframes import(
 )
 import pandas as pd
 import numpy as np
-from pandas import ExcelWriter
+from pandas import ExcelWriter  
+
+
 
 # File paths
 #Declare File path for Labour Payroll
@@ -677,6 +679,142 @@ combined_quarterly_summary = pd.concat([quarterly_summary_OFF, quarterly_summary
 combined_quarterly_summary['Line_ID'] = combined_quarterly_summary['Pay_Number'].astype(str) + '_' + combined_quarterly_summary['Line'].astype(str)
 
 
+# Paycode summary 
+paycode_summary = combined_quarterly_summary
+
+paycode_summary['FY_Q_Label'] = paycode_summary['Financial_Year'].astype(str) + '_' + paycode_summary['FY_Q']
+
+paycode_summary['PayCode'] = paycode_summary['Combined_PayCode'].str.split('_').str[0]
+
+
+paycode_summary.groupby(['Combined_PayCode', 'Description','Period_Ending']).agg({
+    'Client Map - OTE (not capped)': 'sum',
+    'SW Map - OTE (not capped)': 'sum',
+    'SW Map - S&W (not capped)': 'sum',
+    'Client Map - OTE SG (Not capped)': 'sum',
+    'SW Map - OTE SG (Not capped)': 'sum',
+    'SW Map - S&W SG (Not capped)': 'sum',
+    'Payroll - actual SG paid': 'sum',
+    'SCH - actual SG received': 'sum'
+}).reset_index()
+
+# paycode_list = [
+#    '8',
+# '9',
+# 'AL',
+# 'AL-CASHO',
+# 'BACK',
+# 'BEREAVE',
+# 'BONUS',
+# 'BPAY',
+# 'CASBNS',
+# 'CBUS',
+# 'CHILD',
+# 'EXTRA',
+# 'HRSBNS',
+# 'LOAD',
+# 'LOADING',
+# 'LSL',
+# 'MVGARTH',
+# 'NORMAL',
+# 'ORD',
+# 'OT1.5',
+# 'OT2.0',
+# 'OT2.5',
+# 'PH',
+# 'PL-VACC',
+# 'SL',
+# 'TAFE',
+# 'VEHICLE',
+# 'WCOMP',
+# 'WCOMP-EX',
+# 'WORK-EX2',
+# 'WRIL',
+# 'WRKDJ'
+ 
+# ]
+
+Super = [
+    '8',
+'9',
+'CBUS',
+'SUPER'
+]
+
+
+Taxable_Wages = [
+'AL',
+'AL-CASHO',
+'BACK',
+'BEREAVE',
+'BONUS',
+'BPAY',
+'CASBNS',
+'EXTRA',
+'FLEXI',
+'HRSBNS',
+'LOAD',
+'LOADING',
+'LSL',
+'NORMAL',
+'NORMTAX',
+'ORD',
+'OT1.5',
+'OT2.0',
+'OT2.5',
+'PH',
+'PL-VACC',
+'SL',
+'TAFE',
+'WORK-EX2'
+]
+
+
+SALSAC_list = [
+    'SACRIFIC',
+'SALSAC',
+'SS',
+'SS JC',
+'SS JN'
+]
+
+CHILD_list = [
+    'CHILD'
+]
+
+
+TAX_list = [
+    'NORMTAX',
+'VOLTAX'
+]
+
+
+
+#paycode_summary = paycode_summary[paycode_summary['PayCode'].isin(paycode_list)]
+
+paycode_summary['Payroll Tax - Eligible'] = np.where(
+    paycode_summary['PayCode'].isin(Taxable_Wages), paycode_summary['Total'], 0
+)
+
+paycode_summary['Super - Eligible'] = np.where(
+    paycode_summary['PayCode'].isin(Super), paycode_summary['Total'], 0
+)
+
+paycode_summary['SALSAC - Eligible'] = np.where(
+    paycode_summary['PayCode'].isin(SALSAC_list), paycode_summary['Total'], 0
+)
+paycode_summary['Child - Eligible'] = np.where(
+    paycode_summary['PayCode'].isin(CHILD_list), paycode_summary['Total'], 0
+)
+
+paycode_summary['Tax - Eligible'] = np.where(
+    paycode_summary['PayCode'].isin(TAX_list), paycode_summary['Total'], 0
+)
+
+paycode_summary.to_csv('Paycode_Summary.csv', index=False)
+
+
+
 if 'SW - Final Comment' not in combined_quarterly_summary.columns:
     combined_quarterly_summary['Discrepancy 1 - SW Comment'] = ''
 
@@ -1272,7 +1410,7 @@ combined_result_df = SG_actual_Vs_SW_Map(quarter_sum)
 print(combined_result_df.columns)
 
 
-   
+
 
 
 
