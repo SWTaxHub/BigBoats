@@ -757,7 +757,6 @@ Taxable_Wages = [
 'LOADING',
 'LSL',
 'NORMAL',
-'NORMTAX',
 'ORD',
 'OT1.5',
 'OT2.0',
@@ -766,7 +765,8 @@ Taxable_Wages = [
 'PL-VACC',
 'SL',
 'TAFE',
-'WORK-EX2'
+'WCOMP-EX',
+'WCOMP'
 ]
 
 
