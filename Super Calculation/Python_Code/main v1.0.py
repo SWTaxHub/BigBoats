@@ -1578,6 +1578,19 @@ def refer_to_discrepancy_1(comment):
     comment = str(comment)
     return 'Refer to Discrepancy 1' in comment 
 
+
+def refer_to_discrepancy_2(comment):
+    comment = str(comment)
+    return 'Refer to Discrepancy 2' in comment
+
+def Mapping_and_Payroll(comment):
+    comment = str(comment)
+    return 'Mapping and Payroll issue' in comment
+
+def Mapping_issue(comment):
+    comment = str(comment)
+    return 'Mapping issue with pay run' in comment
+
 # Create a new column for each unique description to count matches
 for desc in unique_descriptions:
     unique_comments[f'{desc} - Under Payment Count - Discrep 1'] = unique_comments.apply(
@@ -1597,55 +1610,94 @@ for desc in unique_descriptions:
         axis=1
     )
 
-for desc in unique_descriptions:
-    unique_comments[f'{desc} - Under Payment Count - Discrep 2'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Discrepancy 2 - SW Comment']]
-            if str(comment).strip().endswith(desc) and is_under_payment(comment)
-        ),
+unique_descriptions_2 = [
+    'Underpayment within pay run number'
+]
+
+
+unique_descriptions_3 = [
+    'Overpayment within pay run number']
+
+unique_descriptions_4 = [
+    'No Super was paid under pay run number'
+]
+
+unique_descriptions_5 = [
+    'Client Mapping'
+]
+
+unique_descriptions_6 = [
+    'Mapping and Payroll issue'
+]
+
+unique_descriptions_7 = [
+    'Refer to Discrepancy 2'
+]
+
+unique_descriptions_8 = [
+    'Mapping issue with pay run'
+]
+
+unique_descriptions_9 = [
+    'SW Mapping'
+]
+
+unique_descriptions_10 = [
+    'Refer to Discrepancy 2'
+]
+
+
+unique_descriptions_11 = [
+    'Refer to Discrepancy 1'
+]
+
+for desc in unique_descriptions_2:
+    unique_comments['Under Payment Count - Discrep 2'] = unique_comments.apply(
+        lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if is_under_payment(row['Discrepancy 2 - SW Comment']) else 0,
         axis=1
     )
-for desc in unique_descriptions:
-    unique_comments[f'{desc} - Over Payment Count - Discrep 2'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Discrepancy 2 - SW Comment']]
-            if str(comment).strip().endswith(desc) and is_Over_payment(comment)
-        ),
-        axis=1
-    )
-
-for desc in unique_descriptions:
-    unique_comments[f'{desc} - No Super Count - Discrep 2'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Discrepancy 2 - SW Comment']]
-            if str(comment).strip().endswith(desc) and is_No_Super(comment)
-        ),
-        axis=1
-    )
-
-for desc in unique_descriptions:
-    unique_comments[f'{desc} - Client Mapping No Pay Count - Discrep 2'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Discrepancy 2 - SW Comment']]
-            if str(comment).strip().endswith(desc) and client_mapping(comment)
-        ),
+ 
+for desc in unique_descriptions_3:
+    unique_comments['Over Payment Count - Discrep 2'] = unique_comments.apply(
+        lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if is_Over_payment(row['Discrepancy 2 - SW Comment']) else 0,
         axis=1
     )
 
 
-
-for desc in unique_descriptions:
-    unique_comments[f'{desc} - SW Mapping No Pay Count - Discrep 3'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Discrepancy 3 - SW Comment']]
-            if str(comment).strip().endswith(desc) and SW_mapping(comment)
-        ),
+# for desc in unique_descriptions_4:
+#     unique_comments['No Super Count - Discrep 2'] = unique_comments.apply(
+#         lambda row: sum(
+#             1 for comment in [row['Discrepancy 2 - SW Comment']]
+#             if str(comment).strip().__contains__(desc) and is_No_Super(comment)
+#         ),
+#         axis=1
+#     )
+for desc in unique_descriptions_4:
+    unique_comments['No Super Count - Discrep 2'] = unique_comments.apply(
+        lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if is_No_Super(row['Discrepancy 2 - SW Comment']) else 0,
         axis=1
     )
 
 
-for desc in unique_descriptions:
-    unique_comments[f'{desc} - Refer to Discrepancy 1 Count - Discrep 3'] = unique_comments.apply(
+for desc in unique_descriptions_5:
+    unique_comments['Client Mapping No Pay Count - Discrep 2'] = unique_comments.apply(
+        lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if client_mapping(row['Discrepancy 2 - SW Comment']) else 0,
+        axis=1
+    )
+
+
+# for desc in unique_descriptions_9:
+#     unique_comments['SW Mapping No Pay Count - Discrep 3'] = unique_comments.apply(
+#         lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if SW_mapping(row['Discrepancy 3 - SW Comment']) else 0,
+#         axis=1
+#     )
+
+
+
+
+
+for desc in unique_descriptions_11:
+    unique_comments['Refer to Discrepancy 1 Count - Discrep 3'] = unique_comments.apply(
         lambda row: sum(
             1 for comment in [row['Discrepancy 3 - SW Comment']]
             if str(comment).strip().endswith(desc) and refer_to_discrepancy_1(comment)
@@ -1653,15 +1705,33 @@ for desc in unique_descriptions:
         axis=1
     )
 
-for desc in unique_descriptions:
-    unique_comments[f'{desc} - No Super Count - Discrep 3'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Discrepancy 3 - SW Comment']]
-            if str(comment).strip().endswith(desc) and is_No_Super(comment)
-        ),
+for desc in unique_descriptions_6:
+    unique_comments['Mapping and Payroll issue Count - Discrep 3'] = unique_comments.apply(
+        lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if Mapping_and_Payroll(row['Discrepancy 3 - SW Comment']) else 0,
         axis=1
     )
 
+
+for desc in unique_descriptions_7:
+    unique_comments['Refer to Discrepancy 2 Count - Discrep 3'] = unique_comments.apply(
+        lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if refer_to_discrepancy_2(row['Discrepancy 3 - SW Comment']) else 0,
+        axis=1
+    )
+
+# commented out due to no need for this column - 1/07/2025
+# for desc in unique_descriptions_8:
+#     unique_comments['Mapping issue Count - Discrep 3'] = unique_comments.apply(
+#         lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if Mapping_issue(row['Discrepancy 3 - SW Comment']) else 0,
+#         axis=1
+#     )
+
+# for desc in unique_descriptions_4:
+#     unique_comments[f'{desc} - No Super Count - Discrep 3'] = unique_comments.apply(
+#         lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if is_No_Super(row['Discrepancy 3 - SW Comment']) else 0,
+#         axis=1
+#     )
+
+    
 # Export to CSV
 unique_comments.to_csv('unique_comments.csv', index=False)
 
