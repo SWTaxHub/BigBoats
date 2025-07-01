@@ -65,9 +65,9 @@ combo_Paycodes = process_combo_paycodes(Combo_Paycodes_filepath)
 
 
 
-def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OFFSHORE"):
+def payroll_calc(Payroll_Labour_data, combo_Paycodes, file_suffix="LABOUR / OFFSHORE"):
     global merged_data
-    merged_data = Payroll_Offshore_data.merge(
+    merged_data = Payroll_Labour_data.merge(
         combo_Paycodes,
         how="left",
         left_on="PayCode",
@@ -79,7 +79,52 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
 
     # Remove duplicates
     rows_before = len(merged_data)
+
+
+    # Find all duplicated rows
+    duplicates = merged_data[merged_data.duplicated()]
+
+    # Show the duplicated rows
+    print("Duplicated rows found:")
+    print(duplicates)
+
+    # If you want to see only 'NORMAL' paycodes that are duplicated:
+    normal_duplicates = merged_data[(merged_data['PayCode'] == 'NORMAL') & (merged_data.duplicated())]
+
+    print("Duplicated 'NORMAL' rows found:")
+    print(normal_duplicates)
+
+    # If you want to save them to CSV for review:
+    import os
+
+# Define file path explicitly
+    output_path = r'C:\Git\BigBoats\Super Calculation\Duplicated_rows.csv'
+
+    # Save the file
+    if not duplicates.empty:
+            duplicates.to_csv(output_path, index=False)
+            print(f"Duplicated  rows saved to: {output_path}")
+    else:
+            print("No duplicated NORMAL rows found based on key columns.")
+
+
+
+
+
+
+
+
+
+
+    print(f"Number of rows before dropping duplicates:")
+    print(merged_data[merged_data['PayCode'] == 'NORMAL'].shape[0])
+
+
+
     merged_data = merged_data.drop_duplicates()
+
+    print(f"Number of rows after dropping duplicates:")
+    print(merged_data[merged_data['PayCode'] == 'NORMAL'].shape[0])
     rows_after = len(merged_data)
     print(f"Number of duplicates dropped: {rows_before - rows_after}")
 
@@ -238,7 +283,7 @@ def payroll_calc(Payroll_Offshore_data, combo_Paycodes, file_suffix="LABOUR / OF
                 np.where(
                     merged_data['Combined_PayCode'].isin(Tax_paycodesSW),
                     'TAX',
-                    'N/A'  # Use a string instead of np.nan to avoid dtype mismatch
+                    'N/A'  
 
                 )
             )
@@ -486,27 +531,27 @@ offset = calculate_shortfall_offset(mergedData_Labour)
 offset.to_csv('RollingShortfallOffset_output.csv', index=False)
 
 # Commented out to test the new function
-agg_methods = {
-        'Full_Name': 'first',  
-        'Line': 'first',
-        'Description': 'first',
-        'Hours/Value': 'sum',
-        'Pay_Rate': 'mean',
-        'Total': 'sum',
-        'SG_Rate': 'mean',
-        'FY_Q': 'first',
-        'Financial_Year': 'first', 
-       'Client Mapping' : 'first',
-        'SW mapping' : 'first',
-        'Client Map - OTE (not capped)' : 'sum',
-        'SW Map - OTE (not capped)' : 'sum',
-        'SW Map - S&W (not capped)' : 'sum',
-        'Client Map - OTE SG (Not capped)' : 'sum',
-        'SW Map - OTE SG (Not capped)' : 'sum' , 
-        'SW Map - S&W SG (Not capped)' : 'sum',
-        'Payroll - actual SG paid' : 'sum', 
-        'SCH - actual SG received' : 'sum'
-    }
+# agg_methods = {
+#         'Full_Name': 'first',  
+#         'Line': 'first',
+#         'Description': 'first',
+#         'Hours/Value': 'sum',
+#         'Pay_Rate': 'mean',
+#         'Total': 'sum',
+#         'SG_Rate': 'mean',
+#         'FY_Q': 'first',
+#         'Financial_Year': 'first', 
+#        'Client Mapping' : 'first',
+#         'SW mapping' : 'first',
+#         'Client Map - OTE (not capped)' : 'sum',
+#         'SW Map - OTE (not capped)' : 'sum',
+#         'SW Map - S&W (not capped)' : 'sum',
+#         'Client Map - OTE SG (Not capped)' : 'sum',
+#         'SW Map - OTE SG (Not capped)' : 'sum' , 
+#         'SW Map - S&W SG (Not capped)' : 'sum',
+#         'Payroll - actual SG paid' : 'sum', 
+#         'SCH - actual SG received' : 'sum'
+#     }
 
 
 
@@ -642,13 +687,13 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         np.where(quarterly_summary['SW Map - OTE (not capped)'] < quarterly_summary['MCB'], 'Below cap', "N/A"))
     
 
-    
+    # commented out 27/06/2025
 
-    quarterly_summary['Payroll - actual SG paid_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['Payroll - actual SG paid'].cumsum()
+    # quarterly_summary['Payroll - actual SG paid_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['Payroll - actual SG paid'].cumsum()
 
-    quarterly_summary['Client Mapping - OTE SG Expected_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['Client Map - OTE SG (Not capped)'].cumsum()
+    # quarterly_summary['Client Mapping - OTE SG Expected_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['Client Map - OTE SG (Not capped)'].cumsum()
 
-    quarterly_summary['SW Map - OTE SG expected_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['SW Map - OTE SG (Not capped)'].cumsum()
+    # quarterly_summary['SW Map - OTE SG expected_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['SW Map - OTE SG (Not capped)'].cumsum()
 
 
 
@@ -680,7 +725,9 @@ combined_quarterly_summary['Line_ID'] = combined_quarterly_summary['Pay_Number']
 
 
 # Paycode summary 
-paycode_summary = combined_quarterly_summary
+# Test 27/06/2025
+#paycode_summary = combined_quarterly_summary
+paycode_summary = combined_quarterly_summary.copy()
 
 paycode_summary['FY_Q_Label'] = paycode_summary['Financial_Year'].astype(str) + '_' + paycode_summary['FY_Q']
 
@@ -695,7 +742,8 @@ paycode_summary.groupby(['Combined_PayCode', 'Description','Period_Ending']).agg
     'SW Map - OTE SG (Not capped)': 'sum',
     'SW Map - S&W SG (Not capped)': 'sum',
     'Payroll - actual SG paid': 'sum',
-    'SCH - actual SG received': 'sum'
+    'SCH - actual SG received': 'sum',
+    'Total': 'sum'
 }).reset_index()
 
 # paycode_list = [
@@ -810,6 +858,25 @@ paycode_summary['Child - Eligible'] = np.where(
 paycode_summary['Tax - Eligible'] = np.where(
     paycode_summary['PayCode'].isin(TAX_list), paycode_summary['Total'], 0
 )
+
+print('Period Ending Data Type')
+print(paycode_summary['Period_Ending'].dtype)
+
+
+paycode_summary['Period_Ending'] = pd.to_datetime(paycode_summary['Period_Ending'], errors='coerce')
+
+paycode_summary['Month'] = paycode_summary['Period_Ending'].dt.month
+
+
+
+
+paycode_summary['Financial_Year'] = paycode_summary['Financial_Year'].astype(int)
+paycode_summary['Financial_Year'] = paycode_summary['Financial_Year'].astype(str)
+print(paycode_summary['Financial_Year'].dtype)
+paycode_summary = paycode_summary[paycode_summary['Financial_Year'] == '2024']
+
+
+
 
 paycode_summary.to_csv('Paycode_Summary.csv', index=False)
 
@@ -1438,6 +1505,165 @@ with pd.ExcelWriter(output_excel, engine='xlsxwriter') as writer:
     for df, sheet_name in zip(dataframes, sheet_names):
         df.to_excel(writer, sheet_name=sheet_name, index=False)
 
+
+
+unique_comments = combined_result_df.copy()
+
+# Create the combined 'FY&Q' column
+unique_comments["FY&Q"] = unique_comments["Financial_Year"].astype(str) + "_" + unique_comments["FY_Q"].astype(str)
+
+# Select only the required columns
+unique_comments = unique_comments[['FY&Q', 'Discrepancy 1 - SW Comment', 'Discrepancy 2 - SW Comment', 'Discrepancy 3 - SW Comment']]
+
+# Drop duplicate rows
+unique_comments = unique_comments.drop_duplicates()
+
+
+
+unique_comments['Comment 1 - Count'] = unique_comments['Discrepancy 1 - SW Comment'].apply(lambda x: x.count('|') + 1 if isinstance(x, str) else 0)
+unique_comments['Comment 2 - Count'] = unique_comments['Discrepancy 2 - SW Comment'].apply(lambda x: x.count('|') + 1 if isinstance(x, str) else 0)
+unique_comments['Comment 3 - Count'] = unique_comments['Discrepancy 3 - SW Comment'].apply(lambda x: x.count('|') + 1 if isinstance(x, str) else 0)
+unique_comments['Total Comments'] = unique_comments['Comment 1 - Count'] + unique_comments['Comment 2 - Count'] + unique_comments['Comment 3 - Count']
+
+unique_comments = unique_comments.sort_values(by='FY&Q')
+
+unique_comments['No Payment Under Client Mapping - Comment Count'] = unique_comments.apply(
+    lambda row: sum(1 for comment in [row['Discrepancy 1 - SW Comment'], row['Discrepancy 2 - SW Comment'], row['Discrepancy 3 - SW Comment']] if 'No payment under Client Mapping' in str(comment)),
+    axis=1
+)
+
+unique_comments['SW Mapping Didn\'t Classify Line - Comment Count'] = unique_comments.apply(
+    lambda row: sum(1 for comment in [row['Discrepancy 1 - SW Comment'], row['Discrepancy 2 - SW Comment'], row['Discrepancy 3 - SW Comment']] if 'Overpayment, SW Mapping' in str(comment)),
+    axis=1
+)
+
+# Your unique descriptions list
+unique_descriptions = [
+    'Additional Hours: LEAVE LOADING 17.5%',
+    'Vehicle Allowance as OTE',
+    'MV ALLOWANCE GC as OTE',
+    'Leave Loading',
+    'LEAVE LOADING 17.5%',
+    'Ordinary',
+    'ANNUAL LEAVE LOADING',
+    'Staff Training Day'
+]
+
+# Function to check if a comment is an Overpayment or Under payment
+def is_over_under_payment(comment):
+    comment = str(comment)
+    return 'Overpayment' in comment or 'No payment' in comment
+
+def is_under_payment(comment):
+    comment = str(comment)
+    return 'Underpayment' in comment or 'No payment' in comment
+
+def is_Over_payment(comment):
+    comment = str(comment)
+    return 'Overpayment' in comment 
+
+def is_No_Super(comment):
+    comment = str(comment)
+    return 'No Super' in comment
+
+def client_mapping(comment):
+    comment = str(comment)
+    return 'Client Mapping' in comment
+
+def SW_mapping(comment):
+    comment = str(comment)
+    return 'SW Mapping' in comment
+
+def refer_to_discrepancy_1(comment):
+    comment = str(comment)
+    return 'Refer to Discrepancy 1' in comment 
+
+# Create a new column for each unique description to count matches
+for desc in unique_descriptions:
+    unique_comments[f'{desc} - Under Payment Count - Discrep 1'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Discrepancy 1 - SW Comment']]
+            if str(comment).strip().endswith(desc) and is_under_payment(comment)
+        ),
+        axis=1
+    )
+
+for desc in unique_descriptions:
+    unique_comments[f'{desc} - Over Payment Count - Discrep 1'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Discrepancy 1 - SW Comment']]
+            if str(comment).strip().endswith(desc) and is_Over_payment(comment)
+        ),
+        axis=1
+    )
+
+for desc in unique_descriptions:
+    unique_comments[f'{desc} - Under Payment Count - Discrep 2'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Discrepancy 2 - SW Comment']]
+            if str(comment).strip().endswith(desc) and is_under_payment(comment)
+        ),
+        axis=1
+    )
+for desc in unique_descriptions:
+    unique_comments[f'{desc} - Over Payment Count - Discrep 2'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Discrepancy 2 - SW Comment']]
+            if str(comment).strip().endswith(desc) and is_Over_payment(comment)
+        ),
+        axis=1
+    )
+
+for desc in unique_descriptions:
+    unique_comments[f'{desc} - No Super Count - Discrep 2'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Discrepancy 2 - SW Comment']]
+            if str(comment).strip().endswith(desc) and is_No_Super(comment)
+        ),
+        axis=1
+    )
+
+for desc in unique_descriptions:
+    unique_comments[f'{desc} - Client Mapping No Pay Count - Discrep 2'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Discrepancy 2 - SW Comment']]
+            if str(comment).strip().endswith(desc) and client_mapping(comment)
+        ),
+        axis=1
+    )
+
+
+
+for desc in unique_descriptions:
+    unique_comments[f'{desc} - SW Mapping No Pay Count - Discrep 3'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Discrepancy 3 - SW Comment']]
+            if str(comment).strip().endswith(desc) and SW_mapping(comment)
+        ),
+        axis=1
+    )
+
+
+for desc in unique_descriptions:
+    unique_comments[f'{desc} - Refer to Discrepancy 1 Count - Discrep 3'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Discrepancy 3 - SW Comment']]
+            if str(comment).strip().endswith(desc) and refer_to_discrepancy_1(comment)
+        ),
+        axis=1
+    )
+
+for desc in unique_descriptions:
+    unique_comments[f'{desc} - No Super Count - Discrep 3'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Discrepancy 3 - SW Comment']]
+            if str(comment).strip().endswith(desc) and is_No_Super(comment)
+        ),
+        axis=1
+    )
+
+# Export to CSV
+unique_comments.to_csv('unique_comments.csv', index=False)
 
 #def commentary(combined_result_df, output_dir="output"):
 """
