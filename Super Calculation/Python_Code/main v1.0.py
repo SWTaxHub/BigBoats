@@ -1618,6 +1618,10 @@ unique_descriptions_2 = [
 unique_descriptions_3 = [
     'Overpayment within pay run number']
 
+unique_descriptions_3_1 = [
+    'Overpayment'
+]
+
 unique_descriptions_4 = [
     'No Super was paid under pay run number'
 ]
@@ -1717,6 +1721,65 @@ for desc in unique_descriptions_7:
         lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if refer_to_discrepancy_2(row['Discrepancy 3 - SW Comment']) else 0,
         axis=1
     )
+
+
+unique_comments['Comment 3 - in Depth'] = np.where(
+    unique_comments['Discrepancy 3 - SW Comment'].str.contains('Refer to Discrepancy 1', na=False),
+    unique_comments['Discrepancy 1 - SW Comment'],
+    np.where(
+        unique_comments['Discrepancy 3 - SW Comment'].str.contains('Refer to Discrepancy 2', na=False),
+        unique_comments['Discrepancy 2 - SW Comment'],
+    np.where(
+        unique_comments['Discrepancy 3 - SW Comment'].str.contains('Mapping and Payroll issue', na=False),
+        unique_comments['Discrepancy 3 - SW Comment'],
+        'N/a'
+    )
+    )
+)
+
+
+for desc in unique_descriptions_2:
+    unique_comments['Under Payment Count - Discrep 3 in Depth'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Comment 3 - in Depth']]
+            if str(comment).strip().count(desc) and is_under_payment(comment)
+        ),
+        axis=1
+    )
+
+
+
+for desc in unique_descriptions_3_1:
+    unique_comments['Over Payment Count - Discrep 3 in Depth'] = unique_comments.apply(
+        lambda row: str(row['Comment 3 - in Depth']).count(desc) if is_Over_payment(row['Comment 3 - in Depth']) else 0,
+        axis=1
+    )
+
+
+for desc in unique_descriptions_4:
+    unique_comments['No Super Count - Discrep 3 in Depth'] = unique_comments.apply(
+        lambda row: sum(
+            1 for comment in [row['Comment 3 - in Depth']]
+            if str(comment).strip().count(desc) and is_No_Super(comment)
+        ),
+        axis=1
+    )
+
+# for desc in unique_descriptions_5:
+#     unique_comments['Client Mapping No Pay Count - Discrep 3 in Depth'] = unique_comments.apply(
+#         lambda row: sum(
+#             1 for comment in [row['Comment 3 - in Depth']]
+#             if str(comment).strip().count(desc) and client_mapping(comment)
+#         ),
+#         axis=1
+#     )
+
+for desc in unique_descriptions_5:
+    unique_comments['Client Mapping No Pay Count - Discrep 3 in Depth'] = unique_comments.apply(
+        lambda row: str(row['Comment 3 - in Depth']).count(desc) if client_mapping(row['Comment 3 - in Depth']) else 0,
+        axis=1
+    )
+
 
 # commented out due to no need for this column - 1/07/2025
 # for desc in unique_descriptions_8:
