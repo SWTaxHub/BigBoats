@@ -878,7 +878,7 @@ paycode_summary = paycode_summary[paycode_summary['Financial_Year'] == '2024']
 
 
 
-paycode_summary.to_csv('Paycode_Summary.csv', index=False)
+paycode_summary.to_csv('Paycode_Summary_OG_input_file.csv', index=False)
 
 
 
@@ -1688,15 +1688,6 @@ for desc in unique_descriptions_5:
         lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if client_mapping(row['Discrepancy 2 - SW Comment']) else 0,
         axis=1
     )
-
-
-# for desc in unique_descriptions_9:
-#     unique_comments['SW Mapping No Pay Count - Discrep 3'] = unique_comments.apply(
-#         lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if SW_mapping(row['Discrepancy 3 - SW Comment']) else 0,
-#         axis=1
-#     )
-
-
 
 
 
