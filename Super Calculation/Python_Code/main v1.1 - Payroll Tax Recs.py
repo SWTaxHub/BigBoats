@@ -727,6 +727,10 @@ combined_quarterly_summary['Line_ID'] = combined_quarterly_summary['Pay_Number']
 # Paycode summary 
 # Test 27/06/2025
 #paycode_summary = combined_quarterly_summary
+
+
+
+
 paycode_summary = combined_quarterly_summary.copy()
 
 paycode_summary['FY_Q_Label'] = paycode_summary['Financial_Year'].astype(str) + '_' + paycode_summary['FY_Q']
