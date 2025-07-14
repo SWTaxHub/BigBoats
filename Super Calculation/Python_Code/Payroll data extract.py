@@ -4,7 +4,7 @@
 import re
 import pandas as pd
 import numpy as np
-
+from datetime import date
 
 
 # File path
@@ -273,12 +273,30 @@ df_with_rates["Total"] = np.where(
 )
 
 
+
+# Manual intervention for STRG on 1/07/2023
+
+# Apply the condition using a date object
+df_with_rates["Pay Rate_Effective"] = np.where(
+    (df_with_rates['Code_'] == 'STRG') & (df_with_rates['Period Ending'].dt.date == date(2023, 7, 1)),
+    55.52,
+    df_with_rates["Pay Rate_Effective"]
+)
+df_with_rates["Period Ending"] = pd.to_datetime(df_with_rates["Period Ending"], format="%d/%m/%y", errors="coerce").dt.date
+
+
 # Step 4: Apply updated LOADING totals using the matched pay rate
 df_with_rates["Total"] = np.where(
     df_with_rates["Code"] == "LOADING",
     ((df_with_rates["Pay Rate_Effective"] * (df_with_rates['Hours/ Value'])) * (df_with_rates['Pay Rate']/100)),
     df_with_rates["Total"]
 )
+
+
+
+
+
+
 
 df_with_rates['Total'] = df_with_rates['Total'].astype(float)
 
