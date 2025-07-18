@@ -430,105 +430,105 @@ print(mergedData_Labour.columns)
 
 
 
-def calculate_shortfall_offset(mergedData_Labour):
-    agg_methods = {
-        'Full_Name': 'first',  
-        'Line': 'first',
-        'Description': 'first',
-        'Hours/Value': 'sum',
-        'Pay_Rate': 'mean',
-        'Total': 'sum',
-        'SG_Rate': 'mean',
-        'FY_Q': 'first',
-        'Financial_Year': 'first', 
-        'Client Mapping': 'first',
-        'SW mapping': 'first',
-        'Client Map - OTE (not capped)': 'sum',
-        'SW Map - OTE (not capped)': 'sum',
-        'SW Map - S&W (not capped)': 'sum',
-        'Client Map - OTE SG (Not capped)': 'sum',
-        'SW Map - OTE SG (Not capped)': 'sum', 
-        'SW Map - S&W SG (Not capped)': 'sum',
-        'Payroll - actual SG paid': 'sum', 
-        'SCH - actual SG received': 'sum'
-    }
+# def calculate_shortfall_offset(mergedData_Labour):
+#     agg_methods = {
+#         'Full_Name': 'first',  
+#         'Line': 'first',
+#         'Description': 'first',
+#         'Hours/Value': 'sum',
+#         'Pay_Rate': 'mean',
+#         'Total': 'sum',
+#         'SG_Rate': 'mean',
+#         'FY_Q': 'first',
+#         'Financial_Year': 'first', 
+#         'Client Mapping': 'first',
+#         'SW mapping': 'first',
+#         'Client Map - OTE (not capped)': 'sum',
+#         'SW Map - OTE (not capped)': 'sum',
+#         'SW Map - S&W (not capped)': 'sum',
+#         'Client Map - OTE SG (Not capped)': 'sum',
+#         'SW Map - OTE SG (Not capped)': 'sum', 
+#         'SW Map - S&W SG (Not capped)': 'sum',
+#         'Payroll - actual SG paid': 'sum', 
+#         'SCH - actual SG received': 'sum'
+#     }
 
 
-    df1 = mergedData_Labour.groupby(['Period_Ending', 'Pay_Number', 'Emp.Code']).agg(agg_methods).reset_index()
-    df1 = df1.sort_values(by=['Emp.Code', 'Period_Ending'])
+#     df1 = mergedData_Labour.groupby(['Period_Ending', 'Pay_Number', 'Emp.Code']).agg(agg_methods).reset_index()
+#     df1 = df1.sort_values(by=['Emp.Code', 'Period_Ending'])
 
-    df1['Pay_Rate'] = df1['Pay_Rate'].astype(float).round(2)
+#     df1['Pay_Rate'] = df1['Pay_Rate'].astype(float).round(2)
 
-    df1['SW Map - OTE SG (Not capped)'] = df1['SW Map - OTE SG (Not capped)'].round(2)
-    df1['Shortfall SG'] = df1['Payroll - actual SG paid'] - df1['SW Map - OTE SG (Not capped)']
-    df1['clumative_sum'] = df1.groupby(['Emp.Code'])['Shortfall SG'].cumsum()
+#     df1['SW Map - OTE SG (Not capped)'] = df1['SW Map - OTE SG (Not capped)'].round(2)
+#     df1['Shortfall SG'] = df1['Payroll - actual SG paid'] - df1['SW Map - OTE SG (Not capped)']
+#     df1['clumative_sum'] = df1.groupby(['Emp.Code'])['Shortfall SG'].cumsum()
 
-    df1 = df1.sort_values(by=['Emp.Code', 'Period_Ending'])
+#     df1 = df1.sort_values(by=['Emp.Code', 'Period_Ending'])
 
-    df1['cumulative_sum_12Months_OVERPAY'] = df1.groupby('Emp.Code').apply(
-        lambda g: g.apply(
-            lambda row: g.loc[
-                (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &
-                (g['Period_Ending'] <= row['Period_Ending']) &
-                (g['Shortfall SG'] > 0.01),
-                'Shortfall SG'
-            ].sum(), axis=1)
-    ).reset_index(level=0, drop=True)
+#     df1['cumulative_sum_12Months_OVERPAY'] = df1.groupby('Emp.Code').apply(
+#         lambda g: g.apply(
+#             lambda row: g.loc[
+#                 (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &
+#                 (g['Period_Ending'] <= row['Period_Ending']) &
+#                 (g['Shortfall SG'] > 0.01),
+#                 'Shortfall SG'
+#             ].sum(), axis=1)
+#     ).reset_index(level=0, drop=True)
 
-    df1['Adjust_shortfall_Y/N'] = np.where(
-        (df1['Shortfall SG'] < 0) & (df1['cumulative_sum_12Months_OVERPAY'] > 0), 'Y', 'N'
-    )
+#     df1['Adjust_shortfall_Y/N'] = np.where(
+#         (df1['Shortfall SG'] < 0) & (df1['cumulative_sum_12Months_OVERPAY'] > 0), 'Y', 'N'
+#     )
 
-    df1['cumulative_sum_12Months'] = df1.groupby('Emp.Code').apply(
-        lambda g: g.apply(
-            lambda row: g.loc[
-                (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &
-                (g['Period_Ending'] <= row['Period_Ending']) &
-                (g['Adjust_shortfall_Y/N'] == 'Y'),
-                'Shortfall SG'
-            ].sum(), axis=1)
-    ).reset_index(level=0, drop=True)
+#     df1['cumulative_sum_12Months'] = df1.groupby('Emp.Code').apply(
+#         lambda g: g.apply(
+#             lambda row: g.loc[
+#                 (g['Period_Ending'] > row['Period_Ending'] - pd.DateOffset(years=1)) &
+#                 (g['Period_Ending'] <= row['Period_Ending']) &
+#                 (g['Adjust_shortfall_Y/N'] == 'Y'),
+#                 'Shortfall SG'
+#             ].sum(), axis=1)
+#     ).reset_index(level=0, drop=True)
 
-    df1['Available_Balance'] = np.where(
-        df1['Adjust_shortfall_Y/N'] == 'Y', 
-        df1['cumulative_sum_12Months_OVERPAY'] + df1['cumulative_sum_12Months'],
-        np.nan
-    )
+#     df1['Available_Balance'] = np.where(
+#         df1['Adjust_shortfall_Y/N'] == 'Y', 
+#         df1['cumulative_sum_12Months_OVERPAY'] + df1['cumulative_sum_12Months'],
+#         np.nan
+#     )
 
-    df1['Offset_Shortfall_Y/N'] = np.where(
-        (df1['Shortfall SG'] < 0) & (df1['Available_Balance'] > abs(df1['Shortfall SG'])), 'Y',
-        np.where(
-            (df1['Shortfall SG'] < 0) & (df1['cumulative_sum_12Months_OVERPAY'] > 0) & 
-            (abs(df1['Available_Balance']) < abs(df1['Shortfall SG'])), 'P',
-            'N'
-        )
-    )
+#     df1['Offset_Shortfall_Y/N'] = np.where(
+#         (df1['Shortfall SG'] < 0) & (df1['Available_Balance'] > abs(df1['Shortfall SG'])), 'Y',
+#         np.where(
+#             (df1['Shortfall SG'] < 0) & (df1['cumulative_sum_12Months_OVERPAY'] > 0) & 
+#             (abs(df1['Available_Balance']) < abs(df1['Shortfall SG'])), 'P',
+#             'N'
+#         )
+#     )
 
-    df1['Shortfall_Reduction'] = np.where(
-        df1['Offset_Shortfall_Y/N'] == 'Y',
-        df1['Shortfall SG'],
-        np.where(df1['Offset_Shortfall_Y/N'] == 'P', 
-                 -(abs(df1['Shortfall SG']) - abs(df1['Available_Balance'])),
-                 np.where(df1['Offset_Shortfall_Y/N'] == 'N', 0, 0))
-    )
+#     df1['Shortfall_Reduction'] = np.where(
+#         df1['Offset_Shortfall_Y/N'] == 'Y',
+#         df1['Shortfall SG'],
+#         np.where(df1['Offset_Shortfall_Y/N'] == 'P', 
+#                  -(abs(df1['Shortfall SG']) - abs(df1['Available_Balance'])),
+#                  np.where(df1['Offset_Shortfall_Y/N'] == 'N', 0, 0))
+#     )
 
-    df1['Remaining_Shortfall_Balance'] = np.where(
-        ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'N')), df1['Shortfall SG'],
-        np.where(
-            ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'P')), df1['Available_Balance'],
-            np.where(
-                ((df1['Offset_Shortfall_Y/N'] == 'N') & (df1['Shortfall SG'] < 0)), df1['Shortfall SG'],
-                0
-            )
-        )
-    )
+#     df1['Remaining_Shortfall_Balance'] = np.where(
+#         ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'N')), df1['Shortfall SG'],
+#         np.where(
+#             ((df1['Available_Balance'] <= 0) & (df1['Offset_Shortfall_Y/N'] == 'P')), df1['Available_Balance'],
+#             np.where(
+#                 ((df1['Offset_Shortfall_Y/N'] == 'N') & (df1['Shortfall SG'] < 0)), df1['Shortfall SG'],
+#                 0
+#             )
+#         )
+#     )
 
-    df1['One_Year_Prior'] = df1['Period_Ending'] - pd.DateOffset(years=1)
+#     df1['One_Year_Prior'] = df1['Period_Ending'] - pd.DateOffset(years=1)
 
-    return df1
+#     return df1
 
-offset = calculate_shortfall_offset(mergedData_Labour)
-offset.to_csv('RollingShortfallOffset_output.csv', index=False)
+# offset = calculate_shortfall_offset(mergedData_Labour)
+# offset.to_csv('RollingShortfallOffset_output.csv', index=False)
 
 # Commented out to test the new function
 # agg_methods = {
@@ -874,15 +874,14 @@ paycode_summary['Month'] = paycode_summary['Period_Ending'].dt.month
 
 
 
-paycode_summary['Financial_Year'] = paycode_summary['Financial_Year'].astype(int)
 paycode_summary['Financial_Year'] = paycode_summary['Financial_Year'].astype(str)
 print(paycode_summary['Financial_Year'].dtype)
-paycode_summary = paycode_summary[paycode_summary['Financial_Year'] == '2024']
+#paycode_summary = paycode_summary[paycode_summary['Financial_Year'] == '2024']
 
 
 
 
-paycode_summary.to_csv('Paycode_Summary_new_input_file.csv', index=False)
+paycode_summary.to_csv('Paycode_Summary_new_input_file_fullFYs.csv', index=False)
 
 
 
