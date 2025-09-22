@@ -12,11 +12,11 @@ from datetime import date
 #text_tx = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_HistoryFY24_NewExtract.txt"
 
 # Part 1 of Extract
-Text_part1 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_HistoryFY24_NewExtract_Labour_Part1.txt"
+Text_part1 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part1.txt"
 
 
 # part 2 of Extract
-Text_part2 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_HistoryFY24_NewExtract_Labour_Part2.txt"
+Text_part2 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part2.txt"
 
 # Offshore File Path
 #text_tx = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll\Pay_Details_History_OffSHOREFY24.txt"
@@ -215,113 +215,7 @@ def process_payroll_file(filepath):
         df["Total"]
     )
 
-
-    # Need to create a table for Pay rates for each Code_ by period ending
-
-
-    # Step 1: Filter for NORMAL code
-    df_normal = df[df["Code"] == "NORMAL"].copy()
-
-    # Step 2: Convert 'Period Ending' to datetime if it's not already
-    df_normal["Period Ending"] = pd.to_datetime(df_normal["Period Ending"], format="%d/%m/%y", errors="coerce")
-
-    # Step 3: Drop duplicates to avoid multiple entries for the same pay rate on the same day
-    df_unique = df_normal.drop_duplicates(subset=["Code_", "Pay Rate", "Period Ending"])
-
-    # Step 4: Get earliest period for each Code_ and Pay Rate combo
-    earliest_rate_change = df_unique.groupby(["Code_", "Pay Rate"])["Period Ending"].min().reset_index()
-
-    # Step 5: Optional sort for clarity
-    earliest_rate_change = earliest_rate_change.sort_values(["Code_", "Period Ending"])
-
-
-    earliest_rate_change['Pay Rate'] = earliest_rate_change['Pay Rate'].astype(float).round(2)
-
-
-    print("Earliest Pay Rate Changes by Code and Period Ending:")
-    print(earliest_rate_change)
-
-    earliest_rate_change.to_excel("Earliest_Pay_Rate_Changes.xlsx", index=False)
-
-
-    #drop blank rows
-
-    columns_to_check = ['Code_', 'Full Name', 'Pay No.', 'Line', 'Code', 'Description']
-
-    # Drop rows where all specified columns are blank or NaN
-    df[columns_to_check] = df[columns_to_check].replace(r'^\s*$', np.nan, regex=True)
-    df = df.dropna(subset=columns_to_check, how='all')
-
-
-
-    # Step 1: Convert to datetime first
-    df["Period Ending"] = pd.to_datetime(df["Period Ending"], format="%d/%m/%y", errors="coerce")
-    earliest_rate_change["Period Ending"] = pd.to_datetime(earliest_rate_change["Period Ending"], format="%d/%m/%y", errors="coerce")
-
-    # Step 2: CORRECT sort order (first Period Ending, then Code_)
-    df_sorted = df.sort_values(by=["Period Ending", "Code_"]).reset_index(drop=True)
-    earliest_rate_change_sorted = earliest_rate_change.sort_values(by=["Period Ending", "Code_"]).reset_index(drop=True)
-
-
-    # Step 3: Perform merge_asof with correctly sorted data
-    df_with_rates = pd.merge_asof(
-        df_sorted,
-        earliest_rate_change_sorted,
-        on="Period Ending",
-        by="Code_",
-        direction="backward",
-        suffixes=("", "_Effective")
-    )
-
-
-    print("DF with rate columns: ")
-    print(df_with_rates.columns)
-
-    print(df_with_rates.values)
-
-    df_with_rates['Hours/ Value'] = df_with_rates["Hours/ Value"].astype(float)
-    df_with_rates['Pay Rate_Effective'] =  df_with_rates["Pay Rate_Effective"].astype(float)
-    df_with_rates['Pay Rate'] = df_with_rates['Pay Rate'].astype(float)
-
-
-    # Step 5: Apply fallback logic to other codes (use df_with_rates not df)
-    df_with_rates["Total"] = np.where(
-        ~df_with_rates["Code"].isin(["NORMTAX", "9"]),
-        df_with_rates["Addition"],
-        df_with_rates["Total"]
-    )
-
-
-
-    # Manual intervention for STRG on 1/07/2023
-
-    # Apply the condition using a date object
-    df_with_rates["Pay Rate_Effective"] = np.where(
-        (df_with_rates['Code_'] == 'STRG') & (df_with_rates['Period Ending'].dt.date == date(2023, 7, 1)),
-        55.52,
-        df_with_rates["Pay Rate_Effective"]
-    )
-    df_with_rates["Period Ending"] = pd.to_datetime(df_with_rates["Period Ending"], format="%d/%m/%y", errors="coerce").dt.date
-
-
-    # Step 4: Apply updated LOADING totals using the matched pay rate
-    df_with_rates["Total"] = np.where(
-        df_with_rates["Code"] == "LOADING",
-        ((df_with_rates["Pay Rate_Effective"] * (df_with_rates['Hours/ Value'])) * (df_with_rates['Pay Rate']/100)),
-        df_with_rates["Total"]
-    )
-
-
-
-
-
-
-
-    df_with_rates['Total'] = df_with_rates['Total'].astype(float)
-
-    df_with_rates['Total'] = df_with_rates['Total'].round(2)
-
-    return df_with_rates
+    return df
 
 
 
@@ -338,7 +232,7 @@ df_with_rates = pd.concat([P2, P1], ignore_index=True)
 df_with_rates["Is_Duplicate"] = df_with_rates.duplicated(
     subset=["Period Ending", "Code_", "Pay No.", "Line", "Code", 
             'Hours/ Value',	'Pay Rate',	'Addition',	'Deduction', 'Contrib',
-            'Total', 'Pay Rate_Effective'
+            'Total'# 'Pay Rate_Effective'
 
 ],
     keep=False  # Marks all duplicates as True (not just the second one)
@@ -348,6 +242,104 @@ df_with_rates["Is_Duplicate"] = df_with_rates.duplicated(
 
 print(df_with_rates.dtypes)
 
+  # Need to create a table for Pay rates for each Code_ by period ending
+
+
+    # Step 1: Filter for NORMAL code
+df_normal = df_with_rates[df_with_rates["Code"] == "NORMAL"].copy()
+
+    # Step 2: Convert 'Period Ending' to datetime if it's not already
+df_normal["Period Ending"] = pd.to_datetime(df_normal["Period Ending"], format="%d/%m/%y", errors="coerce")
+
+    # Step 3: Drop duplicates to avoid multiple entries for the same pay rate on the same day
+df_unique = df_normal.drop_duplicates(subset=["Code_", "Pay Rate", "Period Ending"])
+
+    # Step 4: Get earliest period for each Code_ and Pay Rate combo
+earliest_rate_change = df_unique.groupby(["Code_", "Pay Rate"])["Period Ending"].min().reset_index()
+
+    # Step 5: Optional sort for clarity
+earliest_rate_change = earliest_rate_change.sort_values(["Code_", "Period Ending"])
+
+
+earliest_rate_change['Pay Rate'] = earliest_rate_change['Pay Rate'].astype(float).round(2)
+
+print("Earliest Pay Rate Changes by Code and Period Ending:")
+print(earliest_rate_change)
+earliest_rate_change.to_excel("Earliest_Pay_Rate_Changes.xlsx", index=False)
+
+
+    #drop blank rows
+
+columns_to_check = ['Code_', 'Full Name', 'Pay No.', 'Line', 'Code', 'Description']
+
+    # Drop rows where all specified columns are blank or NaN
+df_with_rates[columns_to_check] = df_with_rates[columns_to_check].replace(r'^\s*$', np.nan, regex=True)
+df_with_rates = df_with_rates.dropna(subset=columns_to_check, how='all')
+
+
+    # Step 1: Convert to datetime first
+df_with_rates["Period Ending"] = pd.to_datetime(df_with_rates["Period Ending"], format="%d/%m/%y", errors="coerce")
+earliest_rate_change["Period Ending"] = pd.to_datetime(earliest_rate_change["Period Ending"], format="%d/%m/%y", errors="coerce")
+
+    # Step 2: CORRECT sort order (first Period Ending, then Code_)
+df_sorted = df_with_rates.sort_values(by=["Period Ending", "Code_"]).reset_index(drop=True)
+earliest_rate_change_sorted = earliest_rate_change.sort_values(by=["Period Ending", "Code_"]).reset_index(drop=True)
+
+
+# Step 3: Perform merge_asof with correctly sorted data
+df_with_rates = pd.merge_asof(
+        df_sorted,
+        earliest_rate_change_sorted,
+        on="Period Ending",
+        by="Code_",
+        direction="backward",
+        suffixes=("", "_Effective")
+    )
+
+
+print("DF with rate columns: ")
+print(df_with_rates.columns)
+
+print(df_with_rates.values)
+
+df_with_rates['Hours/ Value'] = df_with_rates["Hours/ Value"].astype(float)
+df_with_rates['Pay Rate_Effective'] =  df_with_rates["Pay Rate_Effective"].astype(float)
+df_with_rates['Pay Rate'] = df_with_rates['Pay Rate'].astype(float)
+
+
+    # Step 5: Apply fallback logic to other codes (use df_with_rates not df)
+df_with_rates["Total"] = np.where(
+        ~df_with_rates["Code"].isin(["NORMTAX", "9"]),
+        df_with_rates["Addition"],
+        df_with_rates["Total"]
+    )
+
+
+
+    # Manual intervention for STRG on 1/07/2023
+
+    # Apply the condition using a date object
+df_with_rates["Pay Rate_Effective"] = np.where(
+        (df_with_rates['Code_'] == 'STRG') & (df_with_rates['Period Ending'].dt.date == date(2023, 7, 1)),
+        55.52,
+        df_with_rates["Pay Rate_Effective"]
+    )
+df_with_rates["Period Ending"] = pd.to_datetime(df_with_rates["Period Ending"], format="%d/%m/%y", errors="coerce").dt.date
+
+
+    # Step 4: Apply updated LOADING totals using the matched pay rate
+df_with_rates["Total"] = np.where(
+        df_with_rates["Code"] == "LOADING",
+        ((df_with_rates["Pay Rate_Effective"] * (df_with_rates['Hours/ Value'])) * (df_with_rates['Pay Rate']/100)),
+        df_with_rates["Total"]
+    )
+
+
+
+
+df_with_rates['Total'] = df_with_rates['Total'].astype(float)
+
+df_with_rates['Total'] = df_with_rates['Total'].round(2)
 
 
 
@@ -368,11 +360,11 @@ df_filrted = filter_pay_numbers(df_with_rates)
 
 
 
-df_filrted.to_excel('Payroll_24_Test.xlsx', index=False)
+df_filrted.to_excel('Payroll_23_Test.xlsx', index=False)
 
 
 
 # Step 6: Export the final dataframe
-df_with_rates.to_excel("Payroll_24_formatted.xlsx", index=False)
-print("Excel file created: Payroll_24_formatted.xlsx")
+df_with_rates.to_excel("Payroll_23_formatted.xlsx", index=False)
+print("Excel file created: Payroll_23_formatted.xlsx")
 
