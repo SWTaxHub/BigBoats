@@ -222,7 +222,7 @@ print("Excel file created: Payroll_24_formatted.xlsx")
 
 
 
-###### OLD COLD ########################
+###### OLD CODE ########################
 
 # # File path
 # text_tx = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour23-24.txt"
