@@ -12,11 +12,11 @@ from datetime import date
 #text_tx = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_HistoryFY24_NewExtract.txt"
 
 # Part 1 of Extract
-Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_LabourFY25_Part1.txt"
+Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part1 (1).txt"
 
 
 # part 2 of Extract
-Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_LabourFY25_Part2.txt"
+Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).txt"
 
 # Offshore File Path
 #text_tx = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll\Pay_Details_History_OffSHOREFY24.txt"
@@ -63,8 +63,10 @@ def process_payroll_file(filepath):
    # tax_line_pattern = re.compile(r"^\s*T\s+(\S+)\s+(.+?)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)")
     tax_line_pattern = re.compile(r"^\s*T\s+(\S+)\s+(.+?)\s+(-?[\d\.]+)\s+(-?[\d\.]+)\s+(-?[\d\.]+)")
 
-
-
+    
+    hrsbn_pattern = re.compile(
+    r"^\s*(N|O|W)\s+HRSBNS\s+(.+?)\s+(\d+\.\d+)\s+(\d+\.\d+)\s*/H\s+(\d+\.\d+)"
+)
 
 
 
@@ -183,8 +185,36 @@ def process_payroll_file(filepath):
                 "Emp Group": "",
                 "Is Termination": is_termination
             })
+        
+            continue
 
+    # for line in lines:
+    #     # Optional: print all lines that contain HRSBNS for debugging
+    #     if "HRSBNS" in line:
+    #         print(f"DEBUG: {repr(line)}")
 
+        if hrsbn_pattern.match(line):
+            line_code, desc, hours, rate, addition = hrsbn_pattern.match(line).groups()
+            records.append({
+                        "Period Ending": period_ending,
+                        "Code_": code_,
+                        "Full Name": full_name,
+                        "Pay No.": pay_no_value,
+                        "Line": line_code,
+                        "Code": "HRSBNS",
+                        "Description": desc.strip(),
+                        "Hours/Value": hours,
+                        "Pay Rate": rate,
+                        "Addition": addition,
+                        "Deduction": "",
+                        "Contrib": "",
+                        "Total": "",
+                        "Cost Centre": "-NO COSTING-",
+                        "Emp Group": "",
+                        "Is Termination": is_termination
+                    })
+            continue
+            
 
 
 
@@ -195,28 +225,50 @@ def process_payroll_file(filepath):
         "Contrib", "Total", "Cost Centre", "Emp Group", "Is Termination"
     ])
 
-    df.to_csv('line195.csv')
+   
 
     # Data cleaning and type conversion
     df["Pay Rate"] = df["Pay Rate"].replace("", "0").astype(float)
     df["Hours/Value"] = df["Hours/Value"].replace("", "0").astype(float)
     df["Contrib"] = df["Contrib"].replace("", "0").astype(float)
+    df["Addition"] = df["Addition"].replace("", "0").astype(float)
     df["Code"] = df["Code"].astype(str).str.strip()
 
+    
+    
+    # 2025 Verison
     # Total calculation logic
-    df["Total"] = np.where(
-        (df["Code"] == "9") & (df["Contrib"] == 0) & (df['Pay No.'] == '82901'),
-        df["Total"],
-        np.where(
-            (df["Code"] == "9") | (df["Code"] == "CBUS") & (df["Contrib"] == 0),
+    #df["Total"] = # np.where(
+        #(df["Code"] == "9") & (df["Contrib"] == 0) & (df['Pay No.'] == '82901'),
+       # df["Total"],
+    # df['Total'] = np.where(
+    #     ((df["Code"].isin(["9", "8", "CBUS"])) & (df["Contrib"] == 0)),
+    #     (df["Pay Rate"] / 100) * df["Hours/Value"],
+    #     np.where(
+    #         ((df["Code"].isin(["9", "8", "CBUS"])) & (df["Contrib"] != 0)),
+    #         df["Contrib"],
+    #         df["Total"]
+    #     )
+    # )
+
+    # 2024 Verison 
+    df['Total'] = np.where(
+        ((df["Code"].isin(["9", "8", "CBUS"])) & (df["Contrib"] == 0) & (df["Hours/Value"] != 0)),
         (df["Pay Rate"] / 100) * df["Hours/Value"],
         np.where(
-            (df["Code"] == "9") | (df["Code"] == "CBUS") & (df["Contrib"] != 0),
-            df["Contrib"],
+            ((df["Code"].isin(["9", "8", "CBUS"])) & (df["Hours/Value"] == 0)),
+            df["Pay Rate"],
             df["Total"]
         )
-        )
     )
+
+
+    df['Total'] = np.where(
+        (df["Code"].isin(["HRSBNS"])) & (df["Contrib"] == 0) & (df["Hours/Value"] != 0),
+        (df["Pay Rate"]) * df["Hours/Value"],
+        df["Total"]
+    )
+
 
     df["Total"] = np.where(
         (df["Code"] == "NORMTAX"),
@@ -224,19 +276,49 @@ def process_payroll_file(filepath):
         df["Total"]
     )
 
-    df["Total"] = np.where(
-        (df["Code"] == "CBUS"),
-        (df["Pay Rate"] / 100) * df["Hours/Value"],
-        df["Total"]
-    )
-
+   
 
     return df
 
 
 
+
+
 P1 = process_payroll_file(Text_part1)
+
+
+# P1["Total"] = np.where(
+#         (P1["Code"] == "CBUS"),
+#         (P1["Pay Rate"] / 100) * P1["Hours/Value"],
+#         P1["Total"]
+#     )
+
+# P1['Total'] = np.where(
+#         P1['Total'].isnull,
+#         P1['Addition'],
+#         P1['Total']
+#     )
+
+
+
 P2 = process_payroll_file(Text_part2)
+
+# P2["Total"] = np.where(
+#         (P2["Code"] == "CBUS"),
+#         (P2["Pay Rate"] / 100) * P2["Hours/Value"],
+#         P2["Total"]
+#     )
+
+# P2['Total'] = np.where(
+#         P2['Total'].isnull,
+#         P2['Addition'],
+#         P2['Total']
+#     )
+
+
+# drop perfect duplicates 
+#P1.drop_duplicates(inplace=True)
+P2.drop_duplicates(inplace=True)
 
 
 P1.to_csv('P1Test.csv')
@@ -244,15 +326,14 @@ P2.to_csv('P2_Test.csv')
 
 
 
-# drop perfect duplicates 
-P1.drop_duplicates(inplace=True)
-P2.drop_duplicates(inplace=True)
 
 #df_with_rates = pd.concat([P2, P1], ignore_index=True).drop_duplicates()
 
 
 
 df_with_rates = pd.concat([P2, P1], ignore_index=True)
+
+
 
 # # Flag duplicates based on the 5 columns
 # df_with_rates["Is_Duplicate"] = df_with_rates.duplicated(
@@ -333,12 +414,12 @@ df_with_rates['Pay Rate_Effective'] =  df_with_rates["Pay Rate_Effective"].astyp
 df_with_rates['Pay Rate'] = df_with_rates['Pay Rate'].astype(float)
 
 
-    # Step 5: Apply fallback logic to other codes (use df_with_rates not df)
-df_with_rates["Total"] = np.where(
-        ~df_with_rates["Code"].isin(["NORMTAX", "9", "CBUS"]),
-        df_with_rates["Addition"],
-        df_with_rates["Total"]
-    )
+#   Step 5: Apply fallback logic to other codes (use df_with_rates not df)
+# df_with_rates["Total"] = np.where(
+#         ~df_with_rates["Code"].isin(["NORMTAX", "9", "CBUS"]),
+#         df_with_rates["Addition"],
+#         df_with_rates["Total"]
+#     )
 
 
 
@@ -363,7 +444,7 @@ df_with_rates["Total"] = np.where(
 
 
 
-df_with_rates['Total'] = df_with_rates['Total'].astype(float)
+#df_with_rates['Total'] = df_with_rates['Total'].astype(float)
 
 df_with_rates['Total'] = df_with_rates['Total'].round(2)
 
@@ -376,12 +457,12 @@ df_with_rates['Total'] = df_with_rates['Total'].round(2)
 #     df_with_rates['Total']
 # )
 
-df_with_rates.drop(
-    df_with_rates[
-        (df_with_rates['Code'] == '9') & (df_with_rates['Hours/Value'] == 0)
-    ].index,
-    inplace=True
-)
+# df_with_rates.drop(
+#     df_with_rates[
+#         (df_with_rates['Code'] == '9') & (df_with_rates['Hours/Value'] == 0)
+#     ].index,
+#     inplace=True
+# )
 
 
 
@@ -401,18 +482,20 @@ df_filrted = filter_pay_numbers(df_with_rates)
 
 
 
-# drop perfect duplicates 
-df_with_rates.drop_duplicates(inplace=True)
+# # drop perfect duplicates 
+# df_with_rates.drop_duplicates(inplace=True)
 
 
 
-df_filrted.to_excel('Payroll_25_Test.xlsx', index=False)
+df_filrted.to_excel('Payroll_24_Test.xlsx', index=False)
 
 
-# Only keep Super lines
+#Only keep Super lines
 df_with_rates = df_with_rates[
-    (df_with_rates["Code"].astype(str).str.strip() == '9') |
-    (df_with_rates["Code"].astype(str).str.strip() == 'CBUS')
+    (df_with_rates["Code"].astype(str).str.strip() == '9')  |
+     (df_with_rates["Code"].astype(str).str.strip() == 'CBUS') |
+     (df_with_rates["Code"].astype(str).str.strip() == 'HRSBNS')
+#     (df_with_rates["Code"].astype(str).str.strip() == '8')
 ]
 
 
@@ -464,6 +547,6 @@ df_with_rates = df_with_rates[new_order]
 
 
 # Step 6: Export the final dataframe
-df_with_rates.to_excel("Payroll_25_formatted.xlsx", index=False)
-print("Excel file created: Payroll_25_formatted.xlsx")
+df_with_rates.to_excel("Payroll_24_formatted.xlsx", index=False)
+print("Excel file created: Payroll_24_formatted.xlsx")
 

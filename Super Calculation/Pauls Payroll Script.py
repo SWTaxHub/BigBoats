@@ -9,9 +9,18 @@ import numpy as np
 # PArt 1
 #file_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour24_25_Part1.txt"
 # Part 2
-file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part2.txt"
+#file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part2.txt"
 
-super_file_path = r"C:\Git\BigBoats\Super Calculation\Payroll_25_formatted.xlsx"
+
+# # Part 1 of Extract
+# file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY24_NewExtract_Labour_Part1 (11).txt"
+
+
+# part 2 of Extract
+file_path = r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).txt"
+
+
+super_file_path = r"C:\Git\Payroll_24_formatted.xlsx"
 
 
 # List to collect structured data records.
@@ -147,19 +156,30 @@ print(df.columns)
 # Display the resulting table in the console (without the DataFrame index).
 print(df.to_string(index=False))
 
-df.to_csv('Labour25_PayrollTest_part2.csv')
+df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).csv")
 
 
 # concat Labour25_PayrollTest_part1.csv and abour25_PayrollTest_part2.csv
 
 # Load the CSV files
-df1 = pd.read_csv(r"C:\Users\smits\Downloads\Labour25_PayrollTest_part1.csv")
-df2 = pd.read_csv(r"C:\Users\smits\Downloads\Labour25_PayrollTest_part2.csv")
-super_df = pd.read_excel(r"C:\Git\BigBoats\Super Calculation\Payroll_25_formatted.xlsx")
+df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part1 (1).csv")
+df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).csv")
+super_df = pd.read_excel(r"C:\Git\Payroll_24_formatted.xlsx")
 
 # Concatenate the dataframes
 combined_df = pd.concat([df1, df2], ignore_index=True)
+#Remove rows where Code equals 'E 9' (trim whitespace and handle NaN)
 
+combined_df = combined_df[
+    (combined_df['Code'].astype(str).str.strip() != 'E 9') &
+    (combined_df['Code'].astype(str).str.strip() != 'E 8') &
+    (combined_df['Code'].astype(str).str.strip() != 'E CBUS') &
+    (combined_df['Code'].astype(str).str.strip() != 'N HRSBNS') &
+    (combined_df['Code'].astype(str).str.strip() != 'O HRSBNS') &
+    (combined_df['Code'].astype(str).str.strip() != 'W HRSBNS') 
+
+]
+combined_df.to_csv('Testwithoutsupermerge.csv')
 
 # create unique key
 combined_df['Key'] = combined_df['Employee Name'].astype(str) + combined_df['Period Ending'].astype(str) + combined_df['Code'].astype(str)
@@ -176,16 +196,9 @@ else:
     print(duplicates)
 
 # drop perfect duplicates 
-combined_df.drop_duplicates(inplace=True)
+#combined_df.drop_duplicates(inplace=True)
 
 # Remove super lines
-
-
-
-# Remove rows where Code equals 'E 9' (trim whitespace and handle NaN)
-combined_df = combined_df[(combined_df['Code'].astype(str).str.strip() != 'E 9') &
-                          (combined_df['Code'].astype(str).str.strip() != 'E CBUS')
-                          ]
 
 
 #Concat combined df and super df
@@ -202,7 +215,12 @@ combined_df['Period Ending'] = combined_df['Period Ending'].dt.date
 
 combined_df = combined_df.sort_values(by=['Employee Name', 'Period Ending'])
 
-# Save the combined dataframe to a new CSV file
-combined_df.to_csv("Labour25_PayrollTest_combined.csv", index=False)
 
-print("Files successfully concatenated into Labour25_PayrollTest_combined.csv")
+
+# drop perfect duplicates 
+#combined_df.drop_duplicates(inplace=True)
+
+# Save the combined dataframe to a new CSV file
+combined_df.to_csv("Labour24_PayrollTest_combined.csv", index=False)
+
+print("Files successfully concatenated into Labour24_PayrollTest_combined.csv")
