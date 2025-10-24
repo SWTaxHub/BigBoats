@@ -274,7 +274,7 @@ def process_payroll_file(filepath):
 
 
     df['Total'] = np.where(
-        (df["Code"].isin(["HRSBNS"])) & (df["Contrib"] == 0) & (df["Hours/Value"] != 0),
+        (df["Code"].isin(["HRSBNS", "AL-CASHO"])) & (df["Contrib"] == 0) & (df["Hours/Value"] != 0),
         (df["Pay Rate"]) * df["Hours/Value"],
         df["Total"]
     )
@@ -505,7 +505,8 @@ df_with_rates = df_with_rates[
     (df_with_rates["Code"].astype(str).str.strip() == '9')  |
     (df_with_rates["Code"].astype(str).str.strip() == '8')  |
      (df_with_rates["Code"].astype(str).str.strip() == 'CBUS') |
-     (df_with_rates["Code"].astype(str).str.strip() == 'HRSBNS')
+     (df_with_rates["Code"].astype(str).str.strip() == 'HRSBNS') |
+     (df_with_rates["Code"].astype(str).str.strip() == 'AL-CASHO')
 #     (df_with_rates["Code"].astype(str).str.strip() == '8')
 ]
 

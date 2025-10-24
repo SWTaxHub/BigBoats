@@ -24,7 +24,7 @@ file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Exc
 
 
 
-super_file_path = r"C:\Git\Payroll_23_formatted.xlsx"
+super_file_path = r"C:\Git\BigBoats\Payroll_23_formatted.xlsx"
 
 
 # List to collect structured data records.
@@ -168,7 +168,7 @@ df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
 ## Load the CSV files
 df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part1.csv")
 df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
-super_df = pd.read_excel(r"C:\Git\Payroll_24_formatted.xlsx")
+super_df = pd.read_excel(r"C:\Git\BigBoats\Payroll_23_formatted.xlsx")
 
 # Concatenate the dataframes
 combined_df = pd.concat([df1, df2], ignore_index=True)
@@ -180,7 +180,8 @@ combined_df = combined_df[
     (combined_df['Code'].astype(str).str.strip() != 'E CBUS') &
     (combined_df['Code'].astype(str).str.strip() != 'N HRSBNS') &
     (combined_df['Code'].astype(str).str.strip() != 'O HRSBNS') &
-    (combined_df['Code'].astype(str).str.strip() != 'W HRSBNS') 
+    (combined_df['Code'].astype(str).str.strip() != 'W HRSBNS') &
+    (combined_df['Code'].astype(str).str.strip() != 'N AL-CASHO')
 
 ]
 combined_df.to_csv('Testwithoutsupermerge.csv')
@@ -209,6 +210,8 @@ else:
 
 
 combined_df = pd.concat([combined_df, super_df], ignore_index=True)
+
+combined_df.to_csv('Testwithsupermerge.csv')
 
 #Sort dataset
 
