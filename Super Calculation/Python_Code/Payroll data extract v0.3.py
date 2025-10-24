@@ -12,11 +12,21 @@ from datetime import date
 #text_tx = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_HistoryFY24_NewExtract.txt"
 
 # Part 1 of Extract
-Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part1 (1).txt"
+# Text_part1 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part1.txt"
+
+# including adjustments Part 1
+#Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_InclADJ.txt"
+# Excluding adjustments Part 1
+Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_Excl_ADJ.txt"
 
 
 # part 2 of Extract
-Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).txt"
+# Text_part2 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part2.txt"
+
+# including adjustments Part 2
+#Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
+# Excluding adjustments Part 2
+Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
 
 # Offshore File Path
 #text_tx = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll\Pay_Details_History_OffSHOREFY24.txt"
@@ -318,7 +328,7 @@ P2 = process_payroll_file(Text_part2)
 
 # drop perfect duplicates 
 #P1.drop_duplicates(inplace=True)
-P2.drop_duplicates(inplace=True)
+#P2.drop_duplicates(inplace=True)
 
 
 P1.to_csv('P1Test.csv')
@@ -493,6 +503,7 @@ df_filrted.to_excel('Payroll_24_Test.xlsx', index=False)
 #Only keep Super lines
 df_with_rates = df_with_rates[
     (df_with_rates["Code"].astype(str).str.strip() == '9')  |
+    (df_with_rates["Code"].astype(str).str.strip() == '8')  |
      (df_with_rates["Code"].astype(str).str.strip() == 'CBUS') |
      (df_with_rates["Code"].astype(str).str.strip() == 'HRSBNS')
 #     (df_with_rates["Code"].astype(str).str.strip() == '8')
@@ -547,6 +558,6 @@ df_with_rates = df_with_rates[new_order]
 
 
 # Step 6: Export the final dataframe
-df_with_rates.to_excel("Payroll_24_formatted.xlsx", index=False)
-print("Excel file created: Payroll_24_formatted.xlsx")
+df_with_rates.to_excel("Payroll_23_formatted.xlsx", index=False)
+print("Excel file created: Payroll_23_formatted.xlsx")
 

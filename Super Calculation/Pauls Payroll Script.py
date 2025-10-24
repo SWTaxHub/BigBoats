@@ -13,14 +13,18 @@ import numpy as np
 
 
 # # Part 1 of Extract
-# file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY24_NewExtract_Labour_Part1 (11).txt"
-
+#file_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part1.txt"
+#file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_InclADJ.txt"
+#file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_Excl_ADJ.txt"
 
 # part 2 of Extract
-file_path = r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).txt"
+#file_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part2.txt"
+#file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
+file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
 
 
-super_file_path = r"C:\Git\Payroll_24_formatted.xlsx"
+
+super_file_path = r"C:\Git\Payroll_23_formatted.xlsx"
 
 
 # List to collect structured data records.
@@ -156,14 +160,14 @@ print(df.columns)
 # Display the resulting table in the console (without the DataFrame index).
 print(df.to_string(index=False))
 
-df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).csv")
+df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
 
 
 # concat Labour25_PayrollTest_part1.csv and abour25_PayrollTest_part2.csv
 
-# Load the CSV files
-df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part1 (1).csv")
-df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).csv")
+## Load the CSV files
+df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part1.csv")
+df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
 super_df = pd.read_excel(r"C:\Git\Payroll_24_formatted.xlsx")
 
 # Concatenate the dataframes
@@ -221,6 +225,6 @@ combined_df = combined_df.sort_values(by=['Employee Name', 'Period Ending'])
 #combined_df.drop_duplicates(inplace=True)
 
 # Save the combined dataframe to a new CSV file
-combined_df.to_csv("Labour24_PayrollTest_combined.csv", index=False)
+combined_df.to_csv("Labour23_PayrollTest_combined.csv", index=False)
 
-print("Files successfully concatenated into Labour24_PayrollTest_combined.csv")
+print("Files successfully concatenated into Labour23_PayrollTest_combined.csv")
