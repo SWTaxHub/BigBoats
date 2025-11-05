@@ -15,18 +15,18 @@ from datetime import date
 # Text_part1 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part1.txt"
 
 # including adjustments Part 1
-#Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_InclADJ.txt"
+Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_InclADJ.txt"
 # Excluding adjustments Part 1
-Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_Excl_ADJ.txt"
+#Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_Excl_ADJ.txt"
 
 
 # part 2 of Extract
 # Text_part2 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part2.txt"
 
 # including adjustments Part 2
-#Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
+Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
 # Excluding adjustments Part 2
-Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
+#Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
 
 # Offshore File Path
 #text_tx = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll\Pay_Details_History_OffSHOREFY24.txt"
@@ -244,7 +244,8 @@ def process_payroll_file(filepath):
     df["Addition"] = df["Addition"].replace("", "0").astype(float)
     df["Code"] = df["Code"].astype(str).str.strip()
 
-    
+
+    df.to_csv('Intermediate_Output.csv')
     
     # 2025 Verison
     # Total calculation logic
@@ -263,19 +264,32 @@ def process_payroll_file(filepath):
 
     # 2024 Verison 
     df['Total'] = np.where(
-        ((df["Code"].isin(["9", "8", "CBUS"])) & (df["Contrib"] == 0) & (df["Hours/Value"] != 0)),
+        ((df["Code"].isin(["9", "8", "CBUS"])) 
+        # 28/10/2025 removed contrib = 0 condition test
+        & (df["Contrib"] == 0) 
+        & (df["Hours/Value"] != 0)),
         (df["Pay Rate"] / 100) * df["Hours/Value"],
         np.where(
             ((df["Code"].isin(["9", "8", "CBUS"])) & (df["Hours/Value"] == 0)),
             df["Pay Rate"],
+        np.where(
+            ((df["Code"].isin(["9", "8", "CBUS"])) & (df["Contrib"] != 0) & (df["Hours/Value"] != 0)),
+            df["Contrib"],
             df["Total"]
+        )
         )
     )
 
 
     df['Total'] = np.where(
-        (df["Code"].isin(["HRSBNS", "AL-CASHO"])) & (df["Contrib"] == 0) & (df["Hours/Value"] != 0),
+        (df["Code"].isin(["HRSBNS", "AL-CASHO", "KM10"])) & (df["Contrib"] == 0) & (df["Hours/Value"] != 0),
         (df["Pay Rate"]) * df["Hours/Value"],
+        df["Total"]
+    )
+
+    df['Total'] = np.where(
+        (df["Code"].isin(["SACRIFIC", 'PH'])),
+        df["Addition"],
         df["Total"]
     )
 
@@ -286,7 +300,37 @@ def process_payroll_file(filepath):
         df["Total"]
     )
 
-   
+    #
+    df['Period Ending'] = pd.to_datetime(df['Period Ending'], errors='coerce')
+
+   # Override Total for specific Pay No. and Code conditions
+    df['Total'] = np.where(
+        #(df["Code"] == "9") 
+        #& (df['Pay No.'] == 67371) 
+        #& (df['Code_'] == 'ZAKJ') & (df['Period Ending'] == '4/02/23'),
+        #0,
+        #np.where(
+            (df["Code"] == "9") 
+            #& (df['Pay No.'] == 70097) 
+            & (df['Code_'] == 'FRAG') & (df['Period Ending'] == '4/03/23') & (df['Full Name'] == 'KIARNA JANE FRAZER'),
+            51.64,
+
+            np.where(
+                (df["Code"] == "9") 
+                & (df['Pay No.'] == '65333') 
+                # date is abit messed up should be 09/10/23
+                & (df['Code_'] == 'GRAT'),
+                #& (df['Period Ending'] == '9/10/22')
+                #& (df['Full Name'] == 'TOHI GRAVES'),
+                93.65,
+                
+                df['Total']
+            )
+        
+     )
+    #)
+
+    #df['Period Ending'] = df['Period Ending'].astype(str)
 
     return df
 
@@ -447,7 +491,8 @@ df_with_rates["Period Ending"] = pd.to_datetime(df_with_rates["Period Ending"], 
     # Step 4: Apply updated LOADING totals using the matched pay rate
 df_with_rates["Total"] = np.where(
         df_with_rates["Code"] == "LOADING",
-        ((df_with_rates["Pay Rate_Effective"] * (df_with_rates['Hours/Value'])) * (df_with_rates['Pay Rate']/100)),
+       # ((df_with_rates["Pay Rate_Effective"] * (df_with_rates['Hours/Value'])) * (df_with_rates['Pay Rate']/100)),
+        ((df_with_rates["Pay Rate_Effective"] *df_with_rates['Pay Rate']/100) * (df_with_rates['Hours/Value'])),
         df_with_rates["Total"]
     )
 
@@ -500,14 +545,18 @@ df_filrted = filter_pay_numbers(df_with_rates)
 df_filrted.to_excel('Payroll_24_Test.xlsx', index=False)
 
 
-#Only keep Super lines
+# #Only keep Super lines
 df_with_rates = df_with_rates[
-    (df_with_rates["Code"].astype(str).str.strip() == '9')  |
-    (df_with_rates["Code"].astype(str).str.strip() == '8')  |
+     (df_with_rates["Code"].astype(str).str.strip() == '9')  |
+     (df_with_rates["Code"].astype(str).str.strip() == '8')  |
      (df_with_rates["Code"].astype(str).str.strip() == 'CBUS') |
      (df_with_rates["Code"].astype(str).str.strip() == 'HRSBNS') |
-     (df_with_rates["Code"].astype(str).str.strip() == 'AL-CASHO')
-#     (df_with_rates["Code"].astype(str).str.strip() == '8')
+     (df_with_rates["Code"].astype(str).str.strip() == 'AL-CASHO') |
+#     (df_with_rates["Code"].astype(str).str.strip() == '8') |
+       (df_with_rates["Code"].astype(str).str.strip() == 'KM10') |
+     (df_with_rates["Code"].astype(str).str.strip() == 'SACRIFIC') |
+     (df_with_rates["Code"].astype(str).str.strip() == 'PH') 
+     #   (df_with_rates["Code"].astype(str).str.strip() == 'LOADING')
 ]
 
 

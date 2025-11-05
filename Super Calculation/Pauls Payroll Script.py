@@ -19,12 +19,12 @@ import numpy as np
 
 # part 2 of Extract
 #file_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part2.txt"
-#file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
-file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
+file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
+#file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
 
 
 
-super_file_path = r"C:\Git\BigBoats\Payroll_23_formatted.xlsx"
+super_file_path = r"C:\Git\BigBoats\Super Calculation\Payroll_23_formatted.xlsx"
 
 
 # List to collect structured data records.
@@ -168,7 +168,7 @@ df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
 ## Load the CSV files
 df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part1.csv")
 df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
-super_df = pd.read_excel(r"C:\Git\BigBoats\Payroll_23_formatted.xlsx")
+super_df = pd.read_excel(r"C:\Git\BigBoats\Super Calculation\Payroll_23_formatted.xlsx")
 
 # Concatenate the dataframes
 combined_df = pd.concat([df1, df2], ignore_index=True)
@@ -181,7 +181,10 @@ combined_df = combined_df[
     (combined_df['Code'].astype(str).str.strip() != 'N HRSBNS') &
     (combined_df['Code'].astype(str).str.strip() != 'O HRSBNS') &
     (combined_df['Code'].astype(str).str.strip() != 'W HRSBNS') &
-    (combined_df['Code'].astype(str).str.strip() != 'N AL-CASHO')
+    (combined_df['Code'].astype(str).str.strip() != 'N AL-CASHO') &
+     (combined_df["Code"].astype(str).str.strip() != 'A KM10') &
+     (combined_df["Code"].astype(str).str.strip() != 'D SACRIFIC')  & 
+     (combined_df["Code"].astype(str).str.strip() != 'N PH')
 
 ]
 combined_df.to_csv('Testwithoutsupermerge.csv')
