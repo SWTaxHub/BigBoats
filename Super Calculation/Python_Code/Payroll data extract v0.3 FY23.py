@@ -6,12 +6,6 @@ import pandas as pd
 import numpy as np
 from datetime import date
 
-import decimal
-
-# Set rounding mode to ROUND_HALF_UP
-decimal.getcontext().rounding = decimal.ROUND_HALF_UP
-
-
 
 # File path
 # Labour File Path
@@ -21,7 +15,7 @@ decimal.getcontext().rounding = decimal.ROUND_HALF_UP
 # Text_part1 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part1.txt"
 
 # including adjustments Part 1
-Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_LabourFY25_Part1.txt"
+Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_InclADJ.txt"
 # Excluding adjustments Part 1
 #Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part1_Excl_ADJ.txt"
 
@@ -30,7 +24,7 @@ Text_part1 = r"C:\Users\smits\Downloads\Pay_Details_History_LabourFY25_Part1.txt
 # Text_part2 = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part2.txt"
 
 # including adjustments Part 2
-Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_LabourFY25_Part2.txt"
+Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
 # Excluding adjustments Part 2
 #Text_part2 = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
 
@@ -316,25 +310,25 @@ def process_payroll_file(filepath):
         #& (df['Code_'] == 'ZAKJ') & (df['Period Ending'] == '4/02/23'),
         #0,
         #np.where(
-            # (df["Code"] == "9") 
-            # #& (df['Pay No.'] == 70097) 
-            # & (df['Code_'] == 'FRAG') & (df['Period Ending'] == '4/03/23') & (df['Full Name'] == 'KIARNA JANE FRAZER'),
-            # 51.64,
+            (df["Code"] == "9") 
+            #& (df['Pay No.'] == 70097) 
+            & (df['Code_'] == 'FRAG') & (df['Period Ending'] == '4/03/23') & (df['Full Name'] == 'KIARNA JANE FRAZER'),
+            51.64,
 
-            #np.where(
+            np.where(
                 (df["Code"] == "9") 
-                & (df['Pay No.'] == '83061') 
+                & (df['Pay No.'] == '65333') 
                 # date is abit messed up should be 09/10/23
-                & (df['Code_'] == 'SATS'),
+                & (df['Code_'] == 'GRAT'),
                 #& (df['Period Ending'] == '9/10/22')
                 #& (df['Full Name'] == 'TOHI GRAVES'),
-                -8.37,
+                93.65,
                 
                 df['Total']
             )
         
-#      )
-#     #)
+     )
+    #)
 
     #df['Period Ending'] = df['Period Ending'].astype(str)
 
@@ -507,20 +501,7 @@ df_with_rates["Total"] = np.where(
 
 #df_with_rates['Total'] = df_with_rates['Total'].astype(float)
 
-#df_with_rates['Total'] = df_with_rates['Total'].round(2)
-
-
-
-# Apply rounding safely
-def safe_round(x):
-    try:
-        return float(decimal.Decimal(str(x)).quantize(decimal.Decimal('0.01')))
-    except (decimal.InvalidOperation, ValueError, TypeError):
-        return np.nan  # or x if you want to keep the original value
-
-df_with_rates['Total'] = df_with_rates['Total'].apply(safe_round)
-
-
+df_with_rates['Total'] = df_with_rates['Total'].round(2)
 
 
 # if Hours/ Value = 0 and Code = 9 then delete row
@@ -561,7 +542,7 @@ df_filrted = filter_pay_numbers(df_with_rates)
 
 
 
-df_filrted.to_excel('Payroll_25_Test.xlsx', index=False)
+df_filrted.to_excel('Payroll_24_Test.xlsx', index=False)
 
 
 # #Only keep Super lines
@@ -574,8 +555,7 @@ df_with_rates = df_with_rates[
 #     (df_with_rates["Code"].astype(str).str.strip() == '8') |
        (df_with_rates["Code"].astype(str).str.strip() == 'KM10') |
      (df_with_rates["Code"].astype(str).str.strip() == 'SACRIFIC') |
-     (df_with_rates["Code"].astype(str).str.strip() == 'PH')  |
-        (df_with_rates["Code"].astype(str).str.strip() == 'D SS')
+     (df_with_rates["Code"].astype(str).str.strip() == 'PH') 
      #   (df_with_rates["Code"].astype(str).str.strip() == 'LOADING')
 ]
 
@@ -628,6 +608,6 @@ df_with_rates = df_with_rates[new_order]
 
 
 # Step 6: Export the final dataframe
-df_with_rates.to_excel("Payroll_25_formatted.xlsx", index=False)
-print("Excel file created: Payroll_25_formatted.xlsx")
+df_with_rates.to_excel("Payroll_23_formatted.xlsx", index=False)
+print("Excel file created: Payroll_23_formatted.xlsx")
 

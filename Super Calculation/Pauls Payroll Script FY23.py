@@ -7,10 +7,9 @@ import numpy as np
 # Define the input file path
 #file_path = r'C:\Users\smits\Downloads\PRNTFILE.RPT 1.txt'  # If the file is not in the current directory, use a full path.
 # PArt 1
-#file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part1.txt"
 #file_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour24_25_Part1.txt"
 # Part 2
-file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part2.txt"
+#file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part2.txt"
 
 
 # # Part 1 of Extract
@@ -20,12 +19,12 @@ file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part2.txt"
 
 # part 2 of Extract
 #file_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part2.txt"
-# file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
+file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
 #file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
 
 
 
-super_file_path = r"C:\Git\BigBoats\Payroll_25_formatted.xlsx"
+super_file_path = r"C:\Git\BigBoats\Super Calculation\Payroll_23_formatted.xlsx"
 
 
 # List to collect structured data records.
@@ -161,15 +160,15 @@ print(df.columns)
 # Display the resulting table in the console (without the DataFrame index).
 print(df.to_string(index=False))
 
-df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part2.csv")
+df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
 
 
 # concat Labour25_PayrollTest_part1.csv and abour25_PayrollTest_part2.csv
 
 ## Load the CSV files
-df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part1.csv")
-df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part2.csv")
-super_df = pd.read_excel(r"C:\Git\BigBoats\Payroll_25_formatted.xlsx")
+df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part1.csv")
+df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
+super_df = pd.read_excel(r"C:\Git\BigBoats\Super Calculation\Payroll_23_formatted.xlsx")
 
 # Concatenate the dataframes
 combined_df = pd.concat([df1, df2], ignore_index=True)
@@ -232,6 +231,6 @@ combined_df = combined_df.sort_values(by=['Employee Name', 'Period Ending'])
 #combined_df.drop_duplicates(inplace=True)
 
 # Save the combined dataframe to a new CSV file
-combined_df.to_csv("Labour25_PayrollTest_combined.csv", index=False)
+combined_df.to_csv("Labour23_PayrollTest_combined.csv", index=False)
 
-print("Files successfully concatenated into Labour25_PayrollTest_combined.csv")
+print("Files successfully concatenated into Labour23_PayrollTest_combined.csv")
