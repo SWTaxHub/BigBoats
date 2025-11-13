@@ -10,8 +10,10 @@ import numpy as np
 #file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part1.txt"
 #file_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour24_25_Part1.txt"
 # Part 2
-file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part2.txt"
+#file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part2.txt"
 
+# Offshore Payroll Extracts
+file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Offshore_22_23 (1).txt"
 
 # # Part 1 of Extract
 #file_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part1.txt"
@@ -161,77 +163,77 @@ print(df.columns)
 # Display the resulting table in the console (without the DataFrame index).
 print(df.to_string(index=False))
 
-df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part2.csv")
+df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_Offshore_23.csv")
 
 
 # concat Labour25_PayrollTest_part1.csv and abour25_PayrollTest_part2.csv
 
-## Load the CSV files
-df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part1.csv")
-df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part2.csv")
-super_df = pd.read_excel(r"C:\Git\BigBoats\Payroll_25_formatted.xlsx")
+# ## Load the CSV files
+# df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part1.csv")
+# df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part2.csv")
+# super_df = pd.read_excel(r"C:\Git\BigBoats\Payroll_25_formatted.xlsx")
 
-# Concatenate the dataframes
-combined_df = pd.concat([df1, df2], ignore_index=True)
-#Remove rows where Code equals 'E 9' (trim whitespace and handle NaN)
+# # Concatenate the dataframes
+# combined_df = pd.concat([df1, df2], ignore_index=True)
+# #Remove rows where Code equals 'E 9' (trim whitespace and handle NaN)
 
-combined_df = combined_df[
-    (combined_df['Code'].astype(str).str.strip() != 'E 9') &
-    (combined_df['Code'].astype(str).str.strip() != 'E 8') &
-    (combined_df['Code'].astype(str).str.strip() != 'E CBUS') &
-    (combined_df['Code'].astype(str).str.strip() != 'N HRSBNS') &
-    (combined_df['Code'].astype(str).str.strip() != 'O HRSBNS') &
-    (combined_df['Code'].astype(str).str.strip() != 'W HRSBNS') &
-    (combined_df['Code'].astype(str).str.strip() != 'N AL-CASHO') &
-     (combined_df["Code"].astype(str).str.strip() != 'A KM10') &
-     (combined_df["Code"].astype(str).str.strip() != 'D SACRIFIC')  & 
-     (combined_df["Code"].astype(str).str.strip() != 'N PH')
+# combined_df = combined_df[
+#     (combined_df['Code'].astype(str).str.strip() != 'E 9') &
+#     (combined_df['Code'].astype(str).str.strip() != 'E 8') &
+#     (combined_df['Code'].astype(str).str.strip() != 'E CBUS') &
+#     (combined_df['Code'].astype(str).str.strip() != 'N HRSBNS') &
+#     (combined_df['Code'].astype(str).str.strip() != 'O HRSBNS') &
+#     (combined_df['Code'].astype(str).str.strip() != 'W HRSBNS') &
+#     (combined_df['Code'].astype(str).str.strip() != 'N AL-CASHO') &
+#      (combined_df["Code"].astype(str).str.strip() != 'A KM10') &
+#      (combined_df["Code"].astype(str).str.strip() != 'D SACRIFIC')  & 
+#      (combined_df["Code"].astype(str).str.strip() != 'N PH')
 
-]
-combined_df.to_csv('Testwithoutsupermerge.csv')
+# ]
+# combined_df.to_csv('Testwithoutsupermerge.csv')
 
-# create unique key
-combined_df['Key'] = combined_df['Employee Name'].astype(str) + combined_df['Period Ending'].astype(str) + combined_df['Code'].astype(str)
+# # create unique key
+# combined_df['Key'] = combined_df['Employee Name'].astype(str) + combined_df['Period Ending'].astype(str) + combined_df['Code'].astype(str)
 
-#check to see if truly unique 
-# Check if all values in the 'Key' column are unique
-if combined_df['Key'].is_unique:
-    print("All values in the 'Key' column are unique.")
-else:
-    print("There are duplicate values in the 'Key' column.")
-    # Optionally, display the duplicates
-    duplicates = combined_df[combined_df.duplicated('Key', keep=False)]
-    print("Duplicate entries:")
-    print(duplicates)
+# #check to see if truly unique 
+# # Check if all values in the 'Key' column are unique
+# if combined_df['Key'].is_unique:
+#     print("All values in the 'Key' column are unique.")
+# else:
+#     print("There are duplicate values in the 'Key' column.")
+#     # Optionally, display the duplicates
+#     duplicates = combined_df[combined_df.duplicated('Key', keep=False)]
+#     print("Duplicate entries:")
+#     print(duplicates)
 
-# drop perfect duplicates 
-#combined_df.drop_duplicates(inplace=True)
+# # drop perfect duplicates 
+# #combined_df.drop_duplicates(inplace=True)
 
-# Remove super lines
-
-
-#Concat combined df and super df
+# # Remove super lines
 
 
-combined_df = pd.concat([combined_df, super_df], ignore_index=True)
-
-combined_df.to_csv('Testwithsupermerge.csv')
-
-#Sort dataset
-
-combined_df['Period Ending'] = pd.to_datetime(combined_df['Period Ending'], format="%d/%m/%y", errors="coerce")
+# #Concat combined df and super df
 
 
-combined_df['Period Ending'] = combined_df['Period Ending'].dt.date
+# combined_df = pd.concat([combined_df, super_df], ignore_index=True)
 
-combined_df = combined_df.sort_values(by=['Employee Name', 'Period Ending'])
+# combined_df.to_csv('Testwithsupermerge.csv')
+
+# #Sort dataset
+
+# combined_df['Period Ending'] = pd.to_datetime(combined_df['Period Ending'], format="%d/%m/%y", errors="coerce")
+
+
+# combined_df['Period Ending'] = combined_df['Period Ending'].dt.date
+
+# combined_df = combined_df.sort_values(by=['Employee Name', 'Period Ending'])
 
 
 
-# drop perfect duplicates 
-#combined_df.drop_duplicates(inplace=True)
+# # drop perfect duplicates 
+# #combined_df.drop_duplicates(inplace=True)
 
-# Save the combined dataframe to a new CSV file
-combined_df.to_csv("Labour25_PayrollTest_combined.csv", index=False)
+# # Save the combined dataframe to a new CSV file
+# combined_df.to_csv("Labour25_PayrollTest_combined.csv", index=False)
 
-print("Files successfully concatenated into Labour25_PayrollTest_combined.csv")
+# print("Files successfully concatenated into Labour25_PayrollTest_combined.csv")
