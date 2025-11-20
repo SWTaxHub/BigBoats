@@ -82,9 +82,10 @@ def process_payroll_data(directory):
     column_mapping = {
         'Period Ending': 'Period_Ending',
         'Full Name': 'Full_Name',
-        #'Pay No.': 'Pay_Number',
+        'Pay No.': 'Pay_Number',
         'Hours/ Value': 'Hours/Value',
         'Rate': 'Pay_Rate',
+        'Code_' : 'Emp.Code',
         #'Cost Centre': 'Cost_Centre',
         #'Emp Group': 'Emp_Group'
     }
@@ -93,11 +94,11 @@ def process_payroll_data(directory):
     # Convert data types
     all_years_payHist['Period_Ending'] = pd.to_datetime(all_years_payHist['Period_Ending'], format='%d/%m/%Y', errors='coerce')
     all_years_payHist['Code'] = all_years_payHist['Code'].astype(str)
-#     all_years_payHist['Pay_Number'] = (
-#     all_years_payHist['Pay_Number']
-#     .fillna(0)  # or any default like -1
-#     .astype(int)
-# )
+    all_years_payHist['Pay_Number'] = (
+    all_years_payHist['Pay_Number']
+    .fillna(0)  # or any default like -1
+    .astype(int)
+)
 
     all_years_payHist['Hours/Value'] = all_years_payHist['Hours/Value'].astype(float)
     all_years_payHist['Pay_Rate'] = all_years_payHist['Pay_Rate'].astype(float)
