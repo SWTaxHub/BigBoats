@@ -399,7 +399,7 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     # Use Description_x if present (typical after merges); else Description
     
     required_cols = [
-        'Period_Ending', 'Pay Description', 'Amount', 'Code', 'Full_Name',
+        'Pay_Number', 'Period_Ending', 'Pay Description', 'Amount', 'Code', 'Full_Name',
     ]
     missing = [c for c in required_cols if c not in payroll_data.columns]
     if missing:
@@ -525,8 +525,8 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     ).round(2)
 
     # ---- 8) IDs & output ----
-   # payroll_data['QtrEMPLID'] = payroll_data['Emp.Code'].astype(str) + '_' + payroll_data['FY_Q_Label']
-    payroll_data['QtrEMPLID'] = payroll_data['Full_Name'].astype(str) + '_' + payroll_data['FY_Q_Label']
+    payroll_data['QtrEMPLID'] = payroll_data['Emp.Code'].astype(str) + '_' + payroll_data['FY_Q_Label']
+    #payroll_data['QtrEMPLID'] = payroll_data['Full_Name'].astype(str) + '_' + payroll_data['FY_Q_Label']
 
     # # Optional: rename to tidy if you had Description_x
     # if desc_col == 'Description_x':
@@ -695,8 +695,8 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
 
     # Define aggregation methods
     agg_methods = {
-        #'Full_Name': 'first',  
-        #'Pay_Number': 'first',
+        'Full_Name': 'first',  
+        'Pay_Number': 'first',
         'Line': 'first',
         'Pay Description': 'first',
         'Hours/Value': 'sum',
@@ -724,8 +724,9 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
 
     # Ensure the required group-by columns exist
     group_by_columns = ['QtrEMPLID', 'FY_Q_Label', 
-                        'Full_Name', 'Combined_PayCode']
-    #group_by_columns = ['QtrEMPLID', 'FY_Q_Label', 'Emp.Code', 'Pay_Number', 'PayCode']
+                        'Emp.Code', 'Combined_PayCode']
+                #'Pay_Number']
+   # #group_by_columns = ['QtrEMPLID', 'FY_Q_Label', 'Emp.Code', 'Pay_Number', 'Code']
     missing_cols = [col for col in group_by_columns if col not in df.columns]
 
     if missing_cols:
@@ -1104,9 +1105,9 @@ quarter_sum = combined_quarterly_summary
 
 agg_methods = {\
         'Entity' : 'first',
-        #'Emp.Code' : 'first',
+        'Emp.Code' : 'first',
         'Full_Name': 'first',  
-        #'Pay_Number': 'last',
+        'Pay_Number': 'last',
         #'Line': 'first',
         'Hours/Value': 'sum',
         'Pay_Rate': 'mean',
