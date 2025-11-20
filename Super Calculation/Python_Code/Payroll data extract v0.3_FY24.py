@@ -501,12 +501,18 @@ df_with_rates = df_with_rates[
 
 df_with_rates.to_csv('Pre_drop.csv')
 
-columns_to_drop = ['Code_', 'Pay No.', 
-                   'Addition', 'Deduction',
-                   'Contrib', 'Is Termination',
-                   'Pay Rate_Effective', 'Emp Group',
+
+columns_to_drop = [
+                   #'Code_', 
+                   #'Pay No.', 
+                #    'Addition', 'Deduction',
+                #    'Contrib', 
+                #    'Is Termination',
+                #    'Pay Rate_Effective',
+                     'Emp Group',
                    'Cost Centre'
                    ]
+
 
 df_with_rates = df_with_rates.drop(columns=columns_to_drop)
 
@@ -538,8 +544,10 @@ df_with_rates['Period Ending'] = df_with_rates["Period Ending Date"]
 
 # Reorder columns
 # Example: reorder columns
-new_order = ['Period Ending', 'Employee Name', 'Code', 'Pay Description',
-             'Hours/Value', 'Rate', 'Amount']
+new_order = ['Period Ending', 'Code_', 'Pay No.', 'Employee Name', 'Code', 'Pay Description',
+             'Hours/Value', 'Rate', 'Addition', 'Deduction',
+                'Contrib',  'Amount', 'Is Termination','Pay Rate_Effective']
+
 
 df_with_rates = df_with_rates[new_order]
 
