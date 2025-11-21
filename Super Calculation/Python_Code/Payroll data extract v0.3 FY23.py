@@ -301,7 +301,7 @@ def process_payroll_file(filepath):
     )
 
     #
-    df['Period Ending'] = pd.to_datetime(df['Period Ending'], errors='coerce')
+    #df['Period Ending'] = pd.to_datetime(df['Period Ending'], errors='coerce')
 
    # Override Total for specific Pay No. and Code conditions
     df['Total'] = np.where(
@@ -330,7 +330,7 @@ def process_payroll_file(filepath):
      )
     #)
 
-    #df['Period Ending'] = df['Period Ending'].astype(str)
+    df['Period Ending'] = df['Period Ending'].astype(str)
 
     return df
 
@@ -410,7 +410,7 @@ print(df_with_rates.dtypes)
 df_normal = df_with_rates[df_with_rates["Code"] == "NORMAL"].copy()
 
     # Step 2: Convert 'Period Ending' to datetime if it's not already
-df_normal["Period Ending"] = pd.to_datetime(df_normal["Period Ending"], format="%d/%m/%y", errors="coerce")
+#df_normal["Period Ending"] = pd.to_datetime(df_normal["Period Ending"], format="%d/%m/%y", errors="coerce")
 
     # Step 3: Drop duplicates to avoid multiple entries for the same pay rate on the same day
 df_unique = df_normal.drop_duplicates(subset=["Code_", "Pay Rate", "Period Ending"])
@@ -479,13 +479,13 @@ df_with_rates['Pay Rate'] = df_with_rates['Pay Rate'].astype(float)
 
     # Manual intervention for STRG on 1/07/2023
 
-    # Apply the condition using a date object
-df_with_rates["Pay Rate_Effective"] = np.where(
-        (df_with_rates['Code_'] == 'STRG') & (df_with_rates['Period Ending'].dt.date == date(2023, 7, 1)),
-        55.52,
-        df_with_rates["Pay Rate_Effective"]
-    )
-df_with_rates["Period Ending"] = pd.to_datetime(df_with_rates["Period Ending"], format="%d/%m/%y", errors="coerce").dt.date
+#     # Apply the condition using a date object
+# df_with_rates["Pay Rate_Effective"] = np.where(
+#         (df_with_rates['Code_'] == 'STRG') & (df_with_rates['Period Ending'].dt.date == date(2023, 7, 1)),
+#         55.52,
+#         df_with_rates["Pay Rate_Effective"]
+#     )
+# df_with_rates["Period Ending"] = pd.to_datetime(df_with_rates["Period Ending"]), format="%d/%m/%y", errors="coerce").dt.date
 
 
     # Step 4: Apply updated LOADING totals using the matched pay rate
@@ -592,7 +592,7 @@ df_with_rates =  df_with_rates.rename(columns=rename_2)
 
 
 # Step 1: Convert to datetime
-df_with_rates['Period Ending'] = pd.to_datetime(df_with_rates['Period Ending'], format="%d/%m/%y", errors="coerce")
+# df_with_rates['Period Ending'] = pd.to_datetime(df_with_rates['Period Ending'], format="%d/%m/%y", errors="coerce")
 
 # Step 2: Extract just the date (removes time component)
 df_with_rates['Period Ending Date'] = df_with_rates['Period Ending'].dt.date

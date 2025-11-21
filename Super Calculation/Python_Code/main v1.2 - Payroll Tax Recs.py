@@ -467,9 +467,29 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     ].dropna().tolist()
 
     # ---- 4) Combined paycode in payroll data ----
+
+    # Split at the first space; everything before -> 'Code_Prefix', after -> 'Code_Remainder'
+    payroll_data[['Code_Prefix', 'Code_Remainder']] = (
+        payroll_data['Code']
+            .astype(str)
+            .str.strip()
+            .str.split(n=1, pat=' ', expand=True)
+    )
+
+
+    payroll_data['Line'] = payroll_data['Code_Prefix'].fillna('')
+
+    payroll_data['Code'] = payroll_data['Code_Remainder'].fillna('')
+
+    payroll_data = payroll_data.drop(columns=['Code_Prefix', 'Code_Remainder'])
+
+
+
+
+
     payroll_data['Combined_PayCode'] = (
         payroll_data['Code'].astype(str) 
-        #+ '_' + payroll_data[desc_col].astype(str)
+        + '_' + payroll_data['Pay Description'].astype(str)
     )
 
     # ---- 5) Mappings ----
@@ -845,7 +865,7 @@ combined_quarterly_summary = pd.concat([quarterly_summary_OFF, quarterly_summary
 
 
 
-#combined_quarterly_summary['Line_ID'] = combined_quarterly_summary['Pay_Number'].astype(str) + '_' + combined_quarterly_summary['Line'].astype(str)
+combined_quarterly_summary['Line_ID'] = combined_quarterly_summary['Pay_Number'].astype(str) + '_' + combined_quarterly_summary['Line'].astype(str)
 
 
 # Paycode summary 
