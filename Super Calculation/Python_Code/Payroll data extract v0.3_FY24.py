@@ -356,7 +356,8 @@ print(df_with_rates.dtypes)
 df_normal = df_with_rates[df_with_rates["Code"] == "NORMAL"].copy()
 
     # Step 2: Convert 'Period Ending' to datetime if it's not already
-df_normal["Period Ending"] = pd.to_datetime(df_normal["Period Ending"], format="%d/%m/%y", errors="coerce")
+
+#df_normal["Period Ending"] = pd.to_datetime(df_normal["Period Ending"], format="%d/%m/%y", errors="coerce")
 
     # Step 3: Drop duplicates to avoid multiple entries for the same pay rate on the same day
 df_unique = df_normal.drop_duplicates(subset=["Code_", "Pay Rate", "Period Ending"])

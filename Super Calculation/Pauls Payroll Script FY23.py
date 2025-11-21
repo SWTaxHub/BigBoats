@@ -24,7 +24,7 @@ file_path = r"C:\Users\smits\Downloads\Pay_Details_History_Labour22-23_Part2_Inc
 
 
 
-super_file_path = r"C:\Git\BigBoats\Super Calculation\Payroll_23_formatted.xlsx"
+super_file_path = r"C:\Git\BigBoats\Payroll_23_formatted.xlsx"
 
 
 # List to collect structured data records.
@@ -40,6 +40,7 @@ data_line_pattern = re.compile(r'^[A-Za-z]\s+\S+')
 
 super_line_pattern = re.compile(r"^\s*E\s+(9|8|SUPER)\s+(.+?)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)")
 
+payno_pattern = re.compile(r"\s*\w+\s+\w+\s+(\d{5})\s+Weekly")
 
 # Open the file and parse line by line.
 with open(file_path, 'r') as file:
@@ -136,6 +137,7 @@ with open(file_path, 'r') as file:
                 records.append({
                     "Period Ending": current_period,
                     "Employee Name": current_employee,
+                    "Pay No.": payno_pattern.search(raw_line).group(1) if payno_pattern.search(raw_line) else '',
                     "Code": code,
                     "Pay Description": pay_description,
                     "Hours/Value": hours_value,
@@ -150,7 +152,7 @@ with open(file_path, 'r') as file:
                 
 
 # Create a DataFrame from the records for structured output.
-df = pd.DataFrame(records, columns=["Period Ending", "Employee Name", "Code", "Pay Description", "Hours/Value", "Rate", "Amount", "Raw Line"])
+df = pd.DataFrame(records, columns=["Period Ending", "Employee Name", "Pay No.", "Code", "Pay Description", "Hours/Value", "Rate", "Amount", "Raw Line"])
 
 
 
@@ -168,7 +170,7 @@ df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
 ## Load the CSV files
 df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part1.csv")
 df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_23_part2.csv")
-super_df = pd.read_excel(r"C:\Git\BigBoats\Super Calculation\Payroll_23_formatted.xlsx")
+super_df = pd.read_excel(r"C:\Git\BigBoats\Payroll_23_formatted.xlsx")
 
 # Concatenate the dataframes
 combined_df = pd.concat([df1, df2], ignore_index=True)
@@ -218,10 +220,10 @@ combined_df.to_csv('Testwithsupermerge.csv')
 
 #Sort dataset
 
-combined_df['Period Ending'] = pd.to_datetime(combined_df['Period Ending'], format="%d/%m/%y", errors="coerce")
+#combined_df['Period Ending'] = pd.to_datetime(combined_df['Period Ending'], format="%d/%m/%y", errors="coerce")
 
 
-combined_df['Period Ending'] = combined_df['Period Ending'].dt.date
+#combined_df['Period Ending'] = combined_df['Period Ending'].dt.date
 
 combined_df = combined_df.sort_values(by=['Employee Name', 'Period Ending'])
 

@@ -25,11 +25,14 @@ file_path = r"C:\Users\smits\Downloads\Pay_Details_HistoryFY25_Labour_Part2.txt"
 
 
 
-super_file_path = r"C:\Git\BigBoats\Payroll_25_formatted.xlsx"
+#super_file_path = r"C:\Git\BigBoats\Payroll_25_formatted.xlsx"
+super_file_path = r"C:\Git\BigBoats\Super Calculation\Payroll_25_formatted.xlsx"
 
 
 # List to collect structured data records.
 records = []
+code_ = ""
+
 
 # Context variables for the current pay period and employee.
 current_period = None    # Current "Period Ending" date (e.g., '01/06/24').
@@ -40,6 +43,11 @@ current_employee = None  # Current employee name (from the line containing 'BANK
 data_line_pattern = re.compile(r'^[A-Za-z]\s+\S+')
 
 super_line_pattern = re.compile(r"^\s*E\s+(9|8|SUPER)\s+(.+?)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)")
+
+
+payno_pattern = re.compile(r"\s*\w+\s+\w+\s+(\d{5})\s+Weekly")
+
+
 
 
 # Open the file and parse line by line.
@@ -136,7 +144,9 @@ with open(file_path, 'r') as file:
                 # Append the extracted data as a record in our list.
                 records.append({
                     "Period Ending": current_period,
+                    "Code_": code_,
                     "Employee Name": current_employee,
+                    "Pay No.": payno_pattern.search(raw_line).group(1) if payno_pattern.search(raw_line) else '',
                     "Code": code,
                     "Pay Description": pay_description,
                     "Hours/Value": hours_value,
@@ -151,7 +161,7 @@ with open(file_path, 'r') as file:
                 
 
 # Create a DataFrame from the records for structured output.
-df = pd.DataFrame(records, columns=["Period Ending", "Employee Name", "Code", "Pay Description", "Hours/Value", "Rate", "Amount", "Raw Line"])
+df = pd.DataFrame(records, columns=["Period Ending", "Code_", "Employee Name", "Pay No.", "Code", "Pay Description", "Hours/Value", "Rate", "Amount", "Raw Line"])
 
 
 
@@ -169,7 +179,7 @@ df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part2.csv")
 ## Load the CSV files
 df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part1.csv")
 df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_25_part2.csv")
-super_df = pd.read_excel(r"C:\Git\BigBoats\Payroll_25_formatted.xlsx")
+super_df = pd.read_excel(r"C:\Git\BigBoats\Super Calculation\Payroll_25_formatted.xlsx")
 
 # Concatenate the dataframes
 combined_df = pd.concat([df1, df2], ignore_index=True)

@@ -20,7 +20,7 @@ import numpy as np
 file_path = r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).txt"
 
 
-super_file_path = r"C:\Git\Payroll_24_formatted.xlsx"
+super_file_path = r"C:\Git\BigBoats\Super Calculation\Payroll_24_formatted.xlsx"
 
 
 # List to collect structured data records.
@@ -164,7 +164,7 @@ df.to_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).csv
 # Load the CSV files
 df1 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part1 (1).csv")
 df2 = pd.read_csv(r"C:\Users\smits\Downloads\Pay_Details_History_labour_24_part2 (1).csv")
-super_df = pd.read_excel(r"C:\Git\Payroll_24_formatted.xlsx")
+super_df = pd.read_excel(r"C:\Git\BigBoats\Super Calculation\Payroll_24_formatted.xlsx")
 
 # Concatenate the dataframes
 combined_df = pd.concat([df1, df2], ignore_index=True)
