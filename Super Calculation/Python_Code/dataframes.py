@@ -83,6 +83,7 @@ def process_payroll_data(directory):
         'Period Ending': 'Period_Ending',
         'Full Name': 'Full_Name',
         'Pay No.': 'Pay_Number',
+        'Unique Key': 'Unique_Key',
         'Hours/ Value': 'Hours/Value',
         'Rate': 'Pay_Rate',
         'Code_' : 'Emp.Code',
