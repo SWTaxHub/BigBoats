@@ -399,7 +399,7 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     # Use Description_x if present (typical after merges); else Description
     
     required_cols = [
-        'Pay_Number', 'Period_Ending', 'Pay Description', 'Amount', 'Code', 'Full_Name',
+        'Pay_Number', 'Period_Ending', 'Pay Description', 'Amount', 'Code', 'Full_Name' #'Unique_Key',
     ]
     missing = [c for c in required_cols if c not in payroll_data.columns]
     if missing:
