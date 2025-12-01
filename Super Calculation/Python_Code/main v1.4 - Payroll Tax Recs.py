@@ -19,6 +19,7 @@ from pandas import ExcelWriter
 
 
 
+
 # File paths
 #Declare File path for Labour Payroll
 
@@ -49,343 +50,16 @@ Super_Labour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pt
 # Declare file path for super offshore
 Super_Offshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Super\CSVs"
 # Declare file path for combo paycodes
-#Combo_Paycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\Paycode_CrossEntity.csv"
-
-
-
-
-
-# Payroll_Labour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll"
-
-# #Declare File path for Offshore Payroll
-# Payroll_Offshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll"
-
-
-# #Declare File path for Allowance Paycodes 
-# allowancePaycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Allowances_crossEntity.csv"
-# #Declare File path for Contribution Paycodes 
-# contributionPaycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Contributions_crossEntity.csv"
-# #Declare File path for Deductions Paycodes 
-# deductionsPaycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Deductions_crossEntity.csv"
-# #Declare File path for Income Paycodes 
-# incomePaycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Income_crossEntity.csv"
-# #Declare File path for Employee Labels Labour
-# Employee_labelsLabour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Employee details\Employee_Labels.csv"
-# #Declare File path for Employee Labels Offshore
-# Employee_labelsOffshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Employee details\Employee_Labels.csv"
-# # Declare File path for Super Labour
-# Super_Labour_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Super\CSVs"
-# # Declare file path for super offshore
-# Super_Offshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Super\CSVs"
-# # Declare file path for combo paycodes
-# Combo_Paycodes_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\Shared Folder\Payroll reports\Paycode_CrossEntity.csv"
-
 
 
 # Generate DataFrames
 Payroll_Labour_data = process_payroll_data(Payroll_Labour_filepath)
 Payroll_Offshore_data = process_payroll_data(Payroll_Offshore_filepath)
-#allowancePaycodes = process_allowance_paycodes(allowancePaycodes_filepath)
-#contributionPaycodes = process_contribution_paycodes(contributionPaycodes_filepath)
-#deductionsPaycodes = process_deduction_paycodes(deductionsPaycodes_filepath)
-#incomePaycodes = process_income_paycodes(incomePaycodes_filepath)
+
 Super_Labour_data = process_super_data(Super_Labour_filepath)
 Super_Offshore = process_super_data(Super_Offshore_filepath)
-#combo_Paycodes = process_combo_paycodes(Combo_Paycodes_filepath)
 
 
-
-#12/02/2025 Next step is to look at how we merge the paycode dataframes into the Payroll data or at least make reference to it
-
-
-
-# def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
-#     global payroll_data     
-
-        
-    
-#     payroll_data['FY_Q'] = np.where(
-#             payroll_data['Period_Ending'].dt.month.isin([7, 8, 9]), 'Q1',
-#             np.where(
-#                 payroll_data['Period_Ending'].dt.month.isin([10, 11, 12]), 'Q2',
-#                 np.where(
-#                     payroll_data['Period_Ending'].dt.month.isin([1, 2, 3]), 'Q3',
-#                     np.where(
-#                         payroll_data['Period_Ending'].dt.month.isin([4, 5, 6]), 'Q4',
-#                         'Unknown'  # Use a string instead of np.nan to avoid dtype mismatch
-#                     )
-#                 )
-#             )
-#         )
-
-#         # Assign the financial year (FY) based on the ending period
-#     payroll_data['Financial_Year'] = np.where(
-#         payroll_data['Period_Ending'].dt.month >= 7,
-#         payroll_data['Period_Ending'].dt.year + 1,  # July–Dec belongs to the next FY
-#         payroll_data['Period_Ending'].dt.year  # Jan–June belongs to the current FY
-#     )
-
-#     # Fill NaN values before converting to int
-#     payroll_data['Financial_Year'] = payroll_data['Financial_Year'].fillna(0).astype(int)
-
-
-#     # Combine FY and Quarter
-#     payroll_data['FY_Q_Label'] = 'FY' + payroll_data['Financial_Year'].astype(str) + '_' + payroll_data['FY_Q']
-
-
-
-    
-#     # Assign SG Rate based on Period_Ending year
-#     payroll_data['SG_Rate'] = np.where(
-#         payroll_data['Financial_Year'] == 2021, 0.095,
-#         np.where(
-#             payroll_data['Financial_Year'] == 2022, 0.1,
-#             np.where(
-#                 payroll_data['Financial_Year'] == 2023, 0.105,
-#                 np.where(
-#                     payroll_data['Financial_Year'] == 2024, 0.11,
-#                     np.where(
-#                         payroll_data['Financial_Year'] == 2025, 0.115,
-#                         np.where(
-#                             payroll_data['Financial_Year'] == 2026, 0.12,
-#                             np.nan  # Use np.nan for years not specified
-#                         )
-#                     )
-#                 )
-#             )
-#         )
-#     )
-    
-    
-    
-#     # Read Paycode Mapping
-
-#     PayMap = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Maritimo\2025.05.21_PAYCODE_MAPPING.xlsx"
-
-#     paycode_mapping = pd.read_excel(PayMap, sheet_name='UPDATED MAPPING')
-
-    
-
-#     paycode_mapping['Combined_PayCode'] = paycode_mapping['PayCode'].astype(str) + '_' + paycode_mapping['Description'].astype(str)
-
-#     OTE_paycodesBigBoats = paycode_mapping.loc[
-#     paycode_mapping['CLIENT MAP FOR SG'] == 'Y', 'Combined_PayCode'
-#     ].dropna().tolist()
-
-    
-
-#     print("Big Boats Paycodes")
-#     print(OTE_paycodesBigBoats)
-#     print("Length of Big Boats Paycodes")
-#     print(len(OTE_paycodesBigBoats))
-
-
-    
-
-#     OTE_paycodesSW = paycode_mapping.loc[
-#     paycode_mapping['SW MAP'] == 'OTE', 'Combined_PayCode'
-#     ].dropna().tolist()
-
-#     print("SW Paycodes")
-#     print(OTE_paycodesSW)
-#     print("Length of SW Paycodes")  
-#     print(len(OTE_paycodesSW))
-
-#     SUPER_paycodesSW = paycode_mapping.loc[
-#         # Amendment 27/05/25
-#         #paycode_mapping['SW MAP'] == 'SUPER', 'Combined_PayCode'
-#         paycode_mapping['SW MAP'] == 'SUPER - SG', 'Combined_PayCode'
-#     ].dropna().tolist()
-
-#     print("Super Paycodes")
-#     print(SUPER_paycodesSW)
-#     print("Length of Super Paycodes")
-#     print(len(SUPER_paycodesSW))
-
-
-#     SnW_paycodesSW = paycode_mapping.loc[
-#         paycode_mapping['SW MAP'] == 'S&W', 'Combined_PayCode'
-#     ].dropna().tolist()
-
-
-#     print("S&W Paycodes")
-#     print(SnW_paycodesSW)
-#     print("Length of S&W Paycodes")
-#     print(len(SnW_paycodesSW))
-
-#     Tax_paycodesSW = paycode_mapping.loc[
-#         paycode_mapping['SW MAP'] == 'TAX', 'Combined_PayCode'
-#     ].dropna().tolist()
-
-#     print("Tax Paycodes")
-#     print(Tax_paycodesSW)
-#     print("Length of Tax Paycodes")
-#     print(len(Tax_paycodesSW))
-
-  
-
-
-#     # Get all unique values from both lists
-#     unique_paycodes = list(set(OTE_paycodesBigBoats + OTE_paycodesSW))
-
-#     # Print the result
-#     print('unique_paycodes')
-#     print(unique_paycodes)
-
-#     payroll_data['Combined_PayCode'] = payroll_data['PayCode'].astype(str) + '_' + payroll_data['Description_x'].astype(str)
-
-#     payroll_data['Client Mapping'] = np.where(
-#          payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats),
-#         'Y',
-#         'N'
-#     )
-
-#     payroll_data['SW mapping'] = np.where(
-#         payroll_data['Combined_PayCode'].isin(OTE_paycodesSW),
-#         'OTE',
-#         np.where(
-#             payroll_data['Combined_PayCode'].isin(SnW_paycodesSW),
-#             'S&W',
-#             np.where(
-#                 payroll_data['Combined_PayCode'].isin(SUPER_paycodesSW),
-#                 'SUPER',
-#                 np.where(
-#                     payroll_data['Combined_PayCode'].isin(Tax_paycodesSW),
-#                     'TAX',
-#                     'N/A'  
-
-#                 )
-#             )
-#         )
-#     )
-    
-
-    
-#     # Calculate OTE amounts for Client and SW OTE mappings
-#     #payroll_data['Client mapping - OTE'] = np.where(
-#     payroll_data['Client Map - OTE (not capped)'] = np.where(
-#         payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats),
-#         payroll_data['Total'],
-#         0
-#     )
-    
-#     #payroll_data['SW Mapping - OTE'] 
-#     payroll_data['SW Map - OTE (not capped)']= np.where(
-#         payroll_data['Combined_PayCode'].isin(OTE_paycodesSW),
-#         payroll_data['Total'],
-#         0
-#     )
-
-#     payroll_data['SW Map - S&W (not capped)'] = np.where(
-#         payroll_data['Combined_PayCode'].isin(SnW_paycodesSW),
-#         payroll_data['Total'],
-#         0
-#     )
-
-#     # Test 28/04/25
-#     # payroll_data['Client Mapping - S&W'] = np.where(
-#     #     payroll_data['PayCode'].isin(OTE_paycodesBigBoats),
-#     #     0,
-#     #     payroll_data['Total']
-#     # )
-
-    
-#     # Calculate SG Actuals and Expected
-#     payroll_data['Client Map - OTE SG (Not capped)'] = np.where(
-#         payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats),
-#         payroll_data['Total'] * payroll_data['SG_Rate'],
-#         0
-#     )
-
-#     payroll_data['Client Map - OTE SG (Not capped)'] = payroll_data['Client Map - OTE SG (Not capped)'].astype(float).round(2)
-
-    
-    
-#     payroll_data['SW Map - OTE SG (Not capped)'] = np.where(
-#         payroll_data['Combined_PayCode'].isin(OTE_paycodesSW),
-#         payroll_data['Total'] * payroll_data['SG_Rate'],
-#         0
-#     )
-
-#     payroll_data['SW Map - OTE SG (Not capped)'] = payroll_data['SW Map - OTE SG (Not capped)'].astype(float).round(2)
-
-
-#     payroll_data['SW Map - S&W SG (Not capped)'] = payroll_data['SW Map - S&W (not capped)'] * payroll_data['SG_Rate']
-
-   
-
-    
-
-#     payroll_data['Payroll - actual SG paid'] = np.where(
-#         payroll_data['Combined_PayCode'].isin(SUPER_paycodesSW),
-#         payroll_data['Total'], 
-#         0
-#     )
-
-#     payroll_data['SCH - actual SG received'] = 0 
-
-    
-
-#     #payroll_data['S&W - Client to SW Map Discrepancy'] = payroll_data['Client Mapping - S&W'] - payroll_data['SW Map - S&W (not capped)']
-
-#     payroll_data['OTE SG Expected - Client to SW Map Discrepancy'] = payroll_data['Client Map - OTE SG (Not capped)'] - payroll_data['SW Map - OTE SG (Not capped)']
-
-#     #payroll_data['S&W SG Expected - Client to SW Map Discrepancy'] = payroll_data['Client Map - S&W SG'] - payroll_data['SW Map - S&W SG (Not capped)']
-
-#     # # Compute the difference
-#     # payroll_data['Super_Diff'] = (
-#     #     payroll_data['SW Map - OTE SG (Not capped)'] - payroll_data['Client Map - OTE SG (Not capped)']
-#     # )
-
-#     payroll_data['QtrEMPLID'] = payroll_data['Emp.Code'].astype(str) + '_' + payroll_data['FY_Q_Label']
-    
-#     # Define the desired column order
-#     column_order = [
-#         'QtrEMPLID', 'Period_Ending', 'FY_Q', 'Financial_Year', 'FY_Q_Label',  # New columns placed after 'Period_Ending'
-#         'Emp.Code', 'Full_Name', 'Pay_Number', 'Line', 'Combined_PayCode', 'PayCode', 'Description_x', 'Hours/Value', 
-#         'Pay_Rate', 'Total', 'Cost_Centre', 'Emp_Group', 'PayCode_Type', 'Description_y', 'Type',
-#         'Tax_Status_Income_Category', 'Formula', 'Value', 'Fixed_Variable', 'Tax_Cert_Status', 'Min_$', 
-#         'Max_$', 'Min_Qty', 'Max_Qty', 'Super_on_Pay_Advice', 'Show_rate_on_Pay_Advice',
-#         'Show_YTD_on_Pay_Advice', 'Allow_Data_Entry', 'Multiple_G_L_Dissections', 'Show_on_Pay_Advice',
-#         'Include_in_SG_Threshold', 'Frequency', 'Super_for_Casuals_Under_18', 'Reduce_Hours', 'Inactive',
-#         'Calculation_Table', 'WCOMP', 'Days_Date', 'Back_Pay', 'Count_from', 'Disperse_over_Cost_Centres',
-#         'Quarterly_Value_Maximum', 'Monthly_Threshold', 'SG_Rate', 
-#         'Client Mapping', 'SW mapping', 'Client Map - OTE (not capped)', 'SW Map - OTE (not capped)', 'SW Map - S&W (not capped)',
-#         'Client Map - OTE SG (Not capped)',
-#         'SW Map - OTE SG (Not capped)' , 'SW Map - S&W SG (Not capped)', 'Payroll - actual SG paid', 'SCH - actual SG received'
-#         # , 'Super_Diff'
-#     ]
-
-        
-#     # Reorder the DataFrame columns
-#     payroll_data = payroll_data[column_order]
-
-#     columns_to_drop = ['Cost_Centre', 'Emp_Group', 'PayCode_Type', 'Description_y', 'Type',
-#         'Tax_Status_Income_Category', 'Formula', 'Value', 'Fixed_Variable', 'Tax_Cert_Status', 'Min_$', 
-#         'Max_$', 'Min_Qty', 'Max_Qty', 'Super_on_Pay_Advice', 'Show_rate_on_Pay_Advice',
-#         'Show_YTD_on_Pay_Advice', 'Allow_Data_Entry', 'Multiple_G_L_Dissections', 'Show_on_Pay_Advice',
-#         'Include_in_SG_Threshold', 'Frequency', 'Super_for_Casuals_Under_18', 'Reduce_Hours', 'Inactive',
-#         'Calculation_Table', 'WCOMP', 'Days_Date', 'Back_Pay', 'Count_from', 'Disperse_over_Cost_Centres',
-#         'Quarterly_Value_Maximum', 'Monthly_Threshold']
-
-#      # Drop unneeded columns if provided
-   
-#     payroll_data = payroll_data.drop(columns=columns_to_drop, errors='ignore')  # ignore errors if columns don't exist
-
-#     payroll_data = payroll_data.rename(columns={'Description_x': 'Description'})
-
-
-    
-#     # Save to CSV with dynamic suffix
-#     filename = f"payroll_data_{file_suffix}.csv"
-#     payroll_data.to_csv(filename, index=False)
-#     print(f"Saved to {filename}")
-
-    
-#     return payroll_data
-
-import numpy as np
-import pandas as pd
 
 def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     """
@@ -429,6 +103,10 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
         payroll_data['Period_Ending'].dt.year
     )
 
+
+    # Convert Financial_Year to integer
+    payroll_data['Financial_Year'] = payroll_data['Financial_Year'].fillna(0).astype(int)
+
     payroll_data['FY_Q_Label'] = 'FY' + payroll_data['Financial_Year'].astype(str) + '_' + payroll_data['FY_Q']
 
     # ---- 2) SG rate by FY ----
@@ -439,42 +117,230 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     # Update this path if needed
     paymap_path = r"C:\Users\smits\OneDrive - SW Accountants & Advisors Pty Ltd\Desktop\Client Projects\Maritimo\2025.05.21_PAYCODE_MAPPING.xlsx"
     paycode_mapping = pd.read_excel(paymap_path, sheet_name='UPDATED MAPPING', engine='openpyxl')
+    
+  
 
+   
+
+
+    # --- Patterns ---
+    DATE_LEADING = r'^\s*\d{1,2}/\d{1,2}/\d{2,4}\s*'  # e.g., 25/04/23 or 25/04/2023 at the start
+    NUM_OR_CURRENCY = r'(?:\$?\d)'                    # token that begins with $ or a digit
+
+    def clean_pay_description(series: pd.Series) -> pd.Series:
+            s = (
+                series.astype('string')
+                    .str.replace('\xa0', ' ', regex=False)              # non-breaking spaces -> normal
+                    .str.replace(DATE_LEADING, '', regex=True)          # remove leading date
+                    .str.strip()
+            )
+
+                # Case A: description starts with a letter -> keep only the initial text
+            mask_alpha = s.str.match(r'^[A-Za-z]')
+            s_alpha = s[mask_alpha]
+
+                # Extract initial alphabetic phrase that is immediately followed by a space + number/currency
+                # If no number follows, we keep the whole alpha-leading string (e.g., "Public Holiday").
+            extracted = s_alpha.str.extract(
+                    r'^\s*([A-Za-z][A-Za-z %&()\-\/]*?)(?=\s+' + NUM_OR_CURRENCY + r')',
+                    expand=False
+                )
+            s.loc[mask_alpha] = extracted.fillna(s_alpha)
+
+                # Tidy whitespace everywhere
+            s = s.str.replace(r'\s{2,}', ' ', regex=True).str.strip()
+
+            return s
+
+        # --- Usage on your dataframe ---
+    payroll_data['Cleaned_Description'] = clean_pay_description(payroll_data['Pay Description'])
+    payroll_data['Pay Description'] = payroll_data['Cleaned_Description']
+
+    # Clean Pay Description so all caps and trimmed
+    payroll_data['Pay Description'] = payroll_data['Pay Description'].str.upper().str.strip()
+
+    drop_names =[
+        'AARON MCKENNA' ,
+        'AIDAN HIGGINS',
+        'AMBER WATT',
+        'ANDREW GREEN' ,
+        'ANDREW SHUTTLEWORTH' ,
+        'ANN MEURS' ,
+        'AUSTIN GROOBY' ,
+        'BAILEY READ' ,
+        'BENJIE JENSEN' ,
+        'BRANDON RILEY' ,
+        'CAILAN MCCOSH' ,
+        'CAMERON KELTON' ,
+        'CARLY S GAMBOA' ,
+        'CHRISTIAN WECH' ,
+        'DAMIAN & LAINE BURTT' ,
+        'DANIEL MOORE' ,
+        'DARREN CADMAN' ,
+        'DERRICK NOWAK' ,
+        'DREW HEADLEY' ,
+        'DYLAN BOOL' ,
+        'GARRETT GRIFFITHS' ,
+        'GREG STROUD' ,
+        'ISAAC MANN' ,
+        'JAC HARMAN' ,
+        'JACK SUTHERLAND' ,
+        'JACK HASHFIELD' ,
+        'JACOB SAVERIN' ,
+        'JACOB ROLAND' ,
+        'JAKE READ' ,
+        'JAMES LOHMANN' ,
+        'JAYDEN ZAKAZAKAARCHER' ,
+        'JAYE LABRUM' ,
+        'JOEL DONNELLY' ,
+        'JOHN CLAYTON' ,
+        'JONATHAN WALTER' ,
+        'JORDAN SHILLINGFORD' ,
+        'JORDAN HANSON' ,
+        'JORDAN STEWART' ,
+        'JORDAN LEE' ,
+        'JORDAN GOMEZ' ,
+        'KADE M MACNAB' ,
+        'JACKSON BRYANT-KELLY' ,
+        'KIEREN DOORTY' ,
+        'KOMANG & SHARON SUASTIKA' ,
+        'KYNAN MCKENZIE' ,
+        'LACHLAN ANWYL' ,
+        'LACHLAN RIDER' ,
+        'LARA COX' ,
+        'LUCAS ZYSVELT' ,
+        'LUCAS BOUHET' ,
+        'MAHMOUD ZEINELDIN' ,
+        'MARK PRICE' ,
+        'MATTHEW DUNCAN' ,
+        'MATTHEW HAYMAN' ,
+        'MATTHEW WARREN' ,
+        'MAX A FINDLAY' ,
+        'MICHAEL COX' ,
+        'MICHAEL SCHEYER' ,
+        'REECE DILNUTT' ,
+        'ROBERT HALL' ,
+        'ROBERT SZIGYARTO' ,
+        'ROBERT VERMUELEN' ,
+        'ROEDOLF KOTZE' ,
+        'RYAN NICHOLS' ,
+        'RYAN ELLIS' ,
+        'STEPHAN & AMBER CANTRICK' ,
+        'TY JORDAN' ,
+        'TYLER RUTTER' ,
+        'ZOE ELIS ANNA DE PRYCK',
+        'BRODIE RUTTER',
+        'CHELCIE JONES',
+        'CHERYL-ANN MEURS',
+        'COLIN JOHN MCKAY',
+        'DESTINY EARL',
+        'GRANT BARRY-COTTER',
+        'JACK SOUTER',
+        'JASMINE FULLER',
+        'JM BLACKLEY',
+        'MICHAEL LLOYD',
+        'T BARRY COTTER',
+        'DARREN & NIKI BLENKINS',
+        'SOYEON CHOI',
+        'SARAH SATIU',
+        'COTTER (BARG)',
+        'ANA LIMA ROXO',
+        # Over lines to drop
+        '2ND YEAR',
+        '6 HOURS',
+        'BACKPAY W/E',
+        'BONUS NOT PREVIOUSLY',
+        'CORRECTED FROM PREVIOUS',
+        'DAYS',
+        'CORRECTED',
+        'CORRECTION WE',
+        'FOR MON',
+        'FOR',
+        'ENDING',
+        'FOR WEEK ENDING',
+        'EFFECTIVE',
+        'FROM',
+        'G AND M JONES',
+        'HOURS NOT PAID',
+        'HOURS SHORT PAID',
+        'IN LIEU OF',
+        'OF',
+        'LEAVE PAID ON',
+        'NOT PAID',
+        'OF HOURLY',
+        'OF SICK',
+        'OF W/E',
+        'LEAVE SHORT PAID',
+        'OF SL',
+        'OF AL -',
+        'OF ANNUAL',
+        'OF PAY',
+        'SHORT PAID',
+        'PAY RATE AS',
+        'PAY FROM',
+        'RATE AS',
+        'PAY RATE',
+        'PAY FOR PUBLIC HOL',
+        'PAY',
+        'UNPAID',
+        'PAYMENT',
+        'SHORTPAID',
+        'PAID OUT ON MEDICAL',
+        'WORKED',
+        'ADJUSTMENT FOR TIME OFF'
+        'ANNUAL LEAVE LOAADING',
+        'APPRENTICESHIP NEW',
+        'LEAVE LOADING',
+        'MEAL ALLOW',
+        'ACKNOWLEDGEMENT'
+
+            ]
+
+
+
+    payroll_data = payroll_data[~payroll_data['Pay Description'].isin(drop_names)]
+
+    
+    cond = payroll_data['Pay Description'].eq('NORMAL -30.4000').fillna(False)
+    payroll_data['Pay Description'] = np.where(cond, 'NORMAL', payroll_data['Pay Description'])
+
+
+ 
     paycode_mapping['Combined_PayCode'] = (
-        paycode_mapping['PayCode'].astype(str) + '_' + paycode_mapping['Description'].astype(str)
-    )
+            paycode_mapping['PayCode'].astype(str) + '_' + paycode_mapping['Description'].astype(str)
+        )
 
-    # Lists
+        # Lists
     OTE_paycodesBigBoats = paycode_mapping.loc[
-        paycode_mapping['CLIENT MAP FOR SG'] == 'Y', 'Combined_PayCode'
-    ].dropna().tolist()
+            paycode_mapping['CLIENT MAP FOR SG'] == 'Y', 'Combined_PayCode'
+        ].dropna().tolist()
 
     OTE_paycodesSW = paycode_mapping.loc[
-        paycode_mapping['SW MAP'] == 'OTE', 'Combined_PayCode'
-    ].dropna().tolist()
+            paycode_mapping['SW MAP'] == 'OTE', 'Combined_PayCode'
+        ].dropna().tolist()
 
     SUPER_paycodesSW = paycode_mapping.loc[
-        paycode_mapping['SW MAP'] == 'SUPER - SG', 'Combined_PayCode'
-    ].dropna().tolist()
+            paycode_mapping['SW MAP'] == 'SUPER - SG', 'Combined_PayCode'
+        ].dropna().tolist()
 
-    # NOTE: use literal 'S&W' (not HTML-escaped)
+        # NOTE: use literal 'S&W' (not HTML-escaped)
     SnW_paycodesSW = paycode_mapping.loc[
-        paycode_mapping['SW MAP'] == 'S&W', 'Combined_PayCode'
-    ].dropna().tolist()
+            paycode_mapping['SW MAP'] == 'S&W', 'Combined_PayCode'
+        ].dropna().tolist()
 
     Tax_paycodesSW = paycode_mapping.loc[
-        paycode_mapping['SW MAP'] == 'TAX', 'Combined_PayCode'
-    ].dropna().tolist()
+            paycode_mapping['SW MAP'] == 'TAX', 'Combined_PayCode'
+        ].dropna().tolist()
 
-    # ---- 4) Combined paycode in payroll data ----
+        # ---- 4) Combined paycode in payroll data ----
 
-    # Split at the first space; everything before -> 'Code_Prefix', after -> 'Code_Remainder'
+        # Split at the first space; everything before -> 'Code_Prefix', after -> 'Code_Remainder'
     payroll_data[['Code_Prefix', 'Code_Remainder']] = (
-        payroll_data['Code']
-            .astype(str)
-            .str.strip()
-            .str.split(n=1, pat=' ', expand=True)
-    )
+            payroll_data['Code']
+                .astype(str)
+                .str.strip()
+                .str.split(n=1, pat=' ', expand=True)
+        )
 
 
     payroll_data['Line'] = payroll_data['Code_Prefix'].fillna('')
@@ -484,75 +350,72 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     payroll_data = payroll_data.drop(columns=['Code_Prefix', 'Code_Remainder'])
 
 
-
-
-
     payroll_data['Combined_PayCode'] = (
-        payroll_data['Code'].astype(str) 
-        + '_' + payroll_data['Pay Description'].astype(str)
-    )
+            payroll_data['Code'].astype(str) 
+            + '_' + payroll_data['Pay Description'].astype(str)
+        )
 
-    # ---- 5) Mappings ----
+        # ---- 5) Mappings ----
     payroll_data['Client Mapping'] = np.where(
-        payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats), 'Y', 'N'
-    )
+            payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats), 'Y', 'N'
+        )
 
     payroll_data['SW mapping'] = np.select(
-        [
-            payroll_data['Combined_PayCode'].isin(OTE_paycodesSW),
-            payroll_data['Combined_PayCode'].isin(SnW_paycodesSW),
-            payroll_data['Combined_PayCode'].isin(SUPER_paycodesSW),
-            payroll_data['Combined_PayCode'].isin(Tax_paycodesSW),
-        ],
-        ['OTE', 'S&W', 'SUPER', 'TAX'],
-        default='N/A'
-    )
+            [
+                payroll_data['Combined_PayCode'].isin(OTE_paycodesSW),
+                payroll_data['Combined_PayCode'].isin(SnW_paycodesSW),
+                payroll_data['Combined_PayCode'].isin(SUPER_paycodesSW),
+                payroll_data['Combined_PayCode'].isin(Tax_paycodesSW),
+            ],
+            ['OTE', 'S&W', 'SUPER', 'TAX'],
+            default='N/A'
+        )
 
-    # ---- 6) OTE buckets ----
+        # ---- 6) OTE buckets ----
     payroll_data['Client Map - OTE (not capped)'] = np.where(
-        payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats), payroll_data['Amount'], 0
-    )
+            payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats), payroll_data['Amount'], 0
+        )
 
     payroll_data['SW Map - OTE (not capped)'] = np.where(
-        payroll_data['Combined_PayCode'].isin(OTE_paycodesSW), payroll_data['Amount'], 0
-    )
+            payroll_data['Combined_PayCode'].isin(OTE_paycodesSW), payroll_data['Amount'], 0
+        )
 
     payroll_data['SW Map - S&W (not capped)'] = np.where(
-        payroll_data['Combined_PayCode'].isin(SnW_paycodesSW), payroll_data['Amount'], 0
-    )
+            payroll_data['Combined_PayCode'].isin(SnW_paycodesSW), payroll_data['Amount'], 0
+        )
 
-    # ---- 7) SG expected & actual ----
+        # ---- 7) SG expected & actual ----
     payroll_data['Client Map - OTE SG (Not capped)'] = (
-        payroll_data['Client Map - OTE (not capped)'] * payroll_data['SG_Rate']
-    ).round(2)
+            payroll_data['Client Map - OTE (not capped)'] * payroll_data['SG_Rate']
+        ).round(2)
 
     payroll_data['SW Map - OTE SG (Not capped)'] = (
-        payroll_data['SW Map - OTE (not capped)'] * payroll_data['SG_Rate']
-    ).round(2)
+            payroll_data['SW Map - OTE (not capped)'] * payroll_data['SG_Rate']
+        ).round(2)
 
     payroll_data['SW Map - S&W SG (Not capped)'] = (
-        payroll_data['SW Map - S&W (not capped)'] * payroll_data['SG_Rate']
-    ).round(2)
+            payroll_data['SW Map - S&W (not capped)'] * payroll_data['SG_Rate']
+        ).round(2)
 
     payroll_data['Payroll - actual SG paid'] = np.where(
-        payroll_data['Combined_PayCode'].isin(SUPER_paycodesSW), payroll_data['Amount'], 0
-    )
+            payroll_data['Combined_PayCode'].isin(SUPER_paycodesSW), payroll_data['Amount'], 0
+        )
 
     payroll_data['SCH - actual SG received'] = 0  # adjust when SCH data available
 
     payroll_data['OTE SG Expected - Client to SW Map Discrepancy'] = (
-        payroll_data['Client Map - OTE SG (Not capped)'] - payroll_data['SW Map - OTE SG (Not capped)']
-    ).round(2)
+            payroll_data['Client Map - OTE SG (Not capped)'] - payroll_data['SW Map - OTE SG (Not capped)']
+        ).round(2)
 
-    # ---- 8) IDs & output ----
+        # ---- 8) IDs & output ----
     payroll_data['QtrEMPLID'] = payroll_data['Emp.Code'].astype(str) + '_' + payroll_data['FY_Q_Label']
-    #payroll_data['QtrEMPLID'] = payroll_data['Full_Name'].astype(str) + '_' + payroll_data['FY_Q_Label']
+        #payroll_data['QtrEMPLID'] = payroll_data['Full_Name'].astype(str) + '_' + payroll_data['FY_Q_Label']
 
-    # # Optional: rename to tidy if you had Description_x
-    # if desc_col == 'Description_x':
-    #     payroll_data = payroll_data.rename(columns={'Description_x': 'Description'})
+        # # Optional: rename to tidy if you had Description_x
+        # if desc_col == 'Description_x':
+        #     payroll_data = payroll_data.rename(columns={'Description_x': 'Description'})
 
-    # Save to CSV with dynamic suffix
+        # Save to CSV with dynamic suffix
     filename = f"payroll_data_{file_suffix}.csv"
     payroll_data.to_csv(filename, index=False)
     print(f"Saved to {filename}")
