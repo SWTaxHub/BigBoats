@@ -292,7 +292,13 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
         'APPRENTICESHIP NEW',
         'LEAVE LOADING',
         'MEAL ALLOW',
-        'ACKNOWLEDGEMENT'
+        'ACKNOWLEDGEMENT',
+        'C D YOUNGS',
+        'C A JONES',
+        'GG & LJ ZISCHKE',
+        'JIG & RG CORBITT',
+        'MR PHILIP CANDLER',
+        'PHILIP CANDLER'
 
             ]
 
@@ -582,6 +588,7 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         'Pay_Number': 'first',
         #'Unique_Key': 'first',
         'Line': 'first',
+        'Code': 'first',
         'Pay Description': 'first',
         'Hours/Value': 'sum',
         'Pay_Rate': 'mean',
