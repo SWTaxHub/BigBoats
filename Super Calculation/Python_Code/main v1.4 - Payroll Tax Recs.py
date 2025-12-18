@@ -54,6 +54,11 @@ Super_Offshore_filepath = r"C:\Users\smits\OneDrive - SW Accountants & Advisors 
 
 # Generate DataFrames
 Payroll_Labour_data = process_payroll_data(Payroll_Labour_filepath)
+
+
+Payroll_Labour_data.to_csv('Payroll_Labour_data_load.csv', index=False)
+
+
 Payroll_Offshore_data = process_payroll_data(Payroll_Offshore_filepath)
 
 Super_Labour_data = process_super_data(Super_Labour_filepath)
@@ -83,25 +88,36 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     payroll_data['Period_Ending'] = pd.to_datetime(payroll_data['Period_Ending'], errors='coerce')
 
     # ---- 1) Quarter & Financial Year ----
-    month = payroll_data['Period_Ending'].dt.month
 
+    month = payroll_data['Period_Ending'].dt.month
+    day   = payroll_data['Period_Ending'].dt.day
+    year  = payroll_data['Period_Ending'].dt.year
+
+    # Quarter logic with Labour exception
     payroll_data['FY_Q'] = np.where(
-        month.isin([7, 8, 9]), 'Q1',
+        (payroll_data['Weird_FY_Check'] == 'LABOUR') & (month == 6) & (day >= 28) & (year == 2024), 'Q1',  # Exception for Labour
         np.where(
-            month.isin([10, 11, 12]), 'Q2',
+            month.isin([7, 8, 9]), 'Q1',
             np.where(
-                month.isin([1, 2, 3]), 'Q3',
-                np.where(month.isin([4, 5, 6]), 'Q4', 'Unknown')
+                month.isin([10, 11, 12]), 'Q2',
+                np.where(
+                    month.isin([1, 2, 3]), 'Q3',
+                    np.where(month.isin([4, 5, 6]), 'Q4', 'Unknown')
+                )
             )
         )
     )
 
-    # FY: months Jul–Dec belong to the *next* FY; Jan–Jun belong to the current FY
+    # Financial Year logic with Labour exception
     payroll_data['Financial_Year'] = np.where(
-        month >= 7,
-        payroll_data['Period_Ending'].dt.year + 1,
-        payroll_data['Period_Ending'].dt.year
+        (payroll_data['Weird_FY_Check'] == 'LABOUR') & (month == 6) & (day >= 28) & (year == 2024), year + 1,  # Exception for Labour
+        np.where(
+            month >= 7,
+            year + 1,
+            year
+        )
     )
+
 
 
     # Convert Financial_Year to integer
@@ -120,7 +136,7 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     
   
 
-   
+ 
 
 
     # --- Patterns ---
@@ -156,9 +172,13 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     payroll_data['Cleaned_Description'] = clean_pay_description(payroll_data['Pay Description'])
     payroll_data['Pay Description'] = payroll_data['Cleaned_Description']
 
+    
+
     # Clean Pay Description so all caps and trimmed
     payroll_data['Pay Description'] = payroll_data['Pay Description'].str.upper().str.strip()
 
+
+# Drop lines for payment processing lines for data cleansing
     drop_names =[
         'AARON MCKENNA' ,
         'AIDAN HIGGINS',
@@ -361,6 +381,8 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
             + '_' + payroll_data['Pay Description'].astype(str)
         )
 
+    payroll_data['Combined_PayCode'] = payroll_data['Combined_PayCode'].str.upper().str.strip()
+
         # ---- 5) Mappings ----
     payroll_data['Client Mapping'] = np.where(
             payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats), 'Y', 'N'
@@ -393,15 +415,21 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
         # ---- 7) SG expected & actual ----
     payroll_data['Client Map - OTE SG (Not capped)'] = (
             payroll_data['Client Map - OTE (not capped)'] * payroll_data['SG_Rate']
-        ).round(2)
+        )
+    # Remove round here to keep precision for later calculations
+    #.round(2)
 
     payroll_data['SW Map - OTE SG (Not capped)'] = (
             payroll_data['SW Map - OTE (not capped)'] * payroll_data['SG_Rate']
-        ).round(2)
+        )
+    # Remove round here to keep precision for later calculations
+    #.round(2)
 
     payroll_data['SW Map - S&W SG (Not capped)'] = (
             payroll_data['SW Map - S&W (not capped)'] * payroll_data['SG_Rate']
-        ).round(2)
+        )
+    # Remove round here to keep precision for later calculations
+    #.round(2)
 
     payroll_data['Payroll - actual SG paid'] = np.where(
             payroll_data['Combined_PayCode'].isin(SUPER_paycodesSW), payroll_data['Amount'], 0
@@ -411,7 +439,9 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
 
     payroll_data['OTE SG Expected - Client to SW Map Discrepancy'] = (
             payroll_data['Client Map - OTE SG (Not capped)'] - payroll_data['SW Map - OTE SG (Not capped)']
-        ).round(2)
+         )
+    # Remove round here to keep precision for later calculations
+    #.round(2)
 
         # ---- 8) IDs & output ----
     payroll_data['QtrEMPLID'] = payroll_data['Emp.Code'].astype(str) + '_' + payroll_data['FY_Q_Label']
