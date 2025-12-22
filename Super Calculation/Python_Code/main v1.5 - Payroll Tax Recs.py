@@ -330,13 +330,16 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     cond = payroll_data['Pay Description'].eq('NORMAL -30.4000').fillna(False)
     payroll_data['Pay Description'] = np.where(cond, 'NORMAL', payroll_data['Pay Description'])
 
-
+# Removed as Hard coded the combined paycode in the mapping file
  
-    paycode_mapping['Combined_PayCode'] = (
-            paycode_mapping['PayCode'].astype(str) + '_' + paycode_mapping['Description'].astype(str)
-        )
+    # paycode_mapping['Combined_PayCode'] = (
+    #         paycode_mapping['PayCode'].astype(str) + '_' + paycode_mapping['Description'].astype(str)
+    #     )
 
-        # Lists
+    #     # Lists
+
+    # Create list for OTE paycodes for Big Boats (Client Mapping)
+    #Where CLIENT MAP FOR SG is Y return paycode
     OTE_paycodesBigBoats = paycode_mapping.loc[
             paycode_mapping['CLIENT MAP FOR SG'] == 'Y', 'Combined_PayCode'
         ].dropna().tolist()
@@ -659,18 +662,97 @@ paycode_summary['FY_Q_Label'] = paycode_summary['Financial_Year'].astype(str) + 
 
 paycode_summary['PayCode'] = paycode_summary['Combined_PayCode'].str.split('_').str[0]
 
+drop_list = ['QtrEMPLID', 'Emp.Code', 'Full_Name', 'Unique_Key', 'Pay_Number', 'Hours/Value', 'Pay_Rate', 'SG_Rate', 'Period_Ending', 'Line_ID', 'FY_Q', 'Line', 'MCB',
+             'Above / Met cap', 'Combined_PayCode', 'Pay Description', 'Above / Met cap', 'Code', 'Financial_Year', 'Client Mapping', 'SW mapping']
 
-paycode_summary.groupby(['Combined_PayCode', 'Pay Description','Period_Ending']).agg({
-    'Client Map - OTE (not capped)': 'sum',
-    'SW Map - OTE (not capped)': 'sum',
-    'SW Map - S&W (not capped)': 'sum',
-    'Client Map - OTE SG (Not capped)': 'sum',
-    'SW Map - OTE SG (Not capped)': 'sum',
-    'SW Map - S&W SG (Not capped)': 'sum',
-    'Payroll - actual SG paid': 'sum',
-    'SCH - actual SG received': 'sum',
-    'Amount': 'sum'
-}).reset_index()
+paycode_summary = paycode_summary.drop(columns=drop_list, errors='ignore')
+
+
+
+cols_to_float = [
+    'Client Map - OTE (not capped)',
+    'SW Map - OTE (not capped)',
+    'SW Map - S&W (not capped)',
+    'Client Map - OTE SG (Not capped)',
+    'SW Map - OTE SG (Not capped)',
+    'SW Map - S&W SG (Not capped)',
+    'Payroll - actual SG paid',
+    'SCH - actual SG received',
+    'Amount',
+    'SW - Exepected Minimum SG',
+    'Client - Exepected Minimum SG'
+]
+
+# Convert each column to float if it exists
+for col in cols_to_float:
+    if col in paycode_summary.columns:
+        paycode_summary[col] = pd.to_numeric(paycode_summary[col], errors='coerce')
+        # OR simply:
+        # paycode_summary[col] = paycode_summary[col].astype(float)
+
+
+
+
+
+
+# Ensure group-by keys exist
+group_keys = ['PayCode', 'FY_Q_Label', 'Entity']
+missing_keys = [k for k in group_keys if k not in paycode_summary.columns]
+if missing_keys:
+    raise KeyError(f"Missing group-by keys: {missing_keys}")
+
+# Build agg dict from existing float columns
+agg_dict = {col: 'sum' for col in cols_to_float if col in paycode_summary.columns}
+
+# Perform aggregation and ASSIGN the result
+paycode_summary = (
+       paycode_summary
+    .groupby(group_keys, dropna=False)
+    .agg(agg_dict)
+    .reset_index()
+)
+
+
+
+
+
+
+
+
+
+
+
+
+# paycode_summary.groupby(['PayCode', 'FY_Q_Label', 'Entity']).agg({
+#                          #'Period_Ending']).agg({
+
+
+#     # 'Client Map - OTE (not capped)': 'sum',
+#     # 'SW Map - OTE (not capped)': 'sum',
+#     # 'SW Map - S&W (not capped)': 'sum',
+#     # 'Client Map - OTE SG (Not capped)': 'sum',
+#     # 'SW Map - OTE SG (Not capped)': 'sum',
+#     # 'SW Map - S&W SG (Not capped)': 'sum',
+#     # 'Payroll - actual SG paid': 'sum',
+#     # 'SCH - actual SG received': 'sum',
+#     # 'Amount': 'sum',
+#     # 'SW - Exepected Minimum SG': 'sum',
+#     # 'Client - Exepected Minimum SG': 'sum'
+
+#     'Amount': 'sum',
+#     'Client Map - OTE (not capped)': 'sum',
+#     'SW Map - OTE (not capped)': 'sum',
+#     'SW Map - S&W (not capped)': 'sum',
+#     'Client Map - OTE SG (Not capped)': 'sum',
+#     'SW Map - OTE SG (Not capped)': 'sum',
+#     'SW Map - S&W SG (Not capped)': 'sum',
+#     'Payroll - actual SG paid': 'sum',
+#     'SCH - actual SG received': 'sum',
+#     'SW - Exepected Minimum SG': 'sum',
+#     'Client - Exepected Minimum SG': 'sum'
+
+
+# }).reset_index()
 
 # paycode_list = [
 #    '8',
@@ -785,23 +867,24 @@ paycode_summary['Tax - Eligible'] = np.where(
     paycode_summary['PayCode'].isin(TAX_list), paycode_summary['Amount'], 0
 )
 
-print('Period Ending Data Type')
-print(paycode_summary['Period_Ending'].dtype)
+#print('Period Ending Data Type')
+#print(paycode_summary['Period_Ending'].dtype)
 
 
-paycode_summary['Period_Ending'] = pd.to_datetime(paycode_summary['Period_Ending'], errors='coerce')
+#paycode_summary['Period_Ending'] = pd.to_datetime(paycode_summary['Period_Ending'], errors='coerce')
 
-paycode_summary['Month'] = paycode_summary['Period_Ending'].dt.month
-
-
+#paycode_summary['Month'] = paycode_summary['Period_Ending'].dt.month
 
 
-paycode_summary['Financial_Year'] = paycode_summary['Financial_Year'].astype(str)
-print(paycode_summary['Financial_Year'].dtype)
+
+
+#paycode_summary['Financial_Year'] = paycode_summary['Financial_Year'].astype(str)
+#print(paycode_summary['Financial_Year'].dtype)
 #paycode_summary = paycode_summary[paycode_summary['Financial_Year'] == '2024']
 
 
-
+#Drop ducplicates
+paycode_summary = paycode_summary.drop_duplicates()
 
 paycode_summary.to_csv('Paycode_Summary_new_input_file_fullFYs.csv', index=False)
 

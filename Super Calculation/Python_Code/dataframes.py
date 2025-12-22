@@ -40,6 +40,7 @@ Income for Month, Super for Month, Income for Pay, Super For Pay
 import pandas as pd 
 import os
 from pathlib import Path
+import re
 
 
 
@@ -59,6 +60,33 @@ payHistoryLabour = pd.DataFrame()
 #Merge Dataframes with pandas
 
 
+def normalize_header(name: str) -> str:
+            """
+            Normalizes a single column header:
+            - trims
+            - lowercases
+            - removes dots
+            - replaces spaces, slashes, and dashes with underscores
+            - collapses multiple underscores
+            """
+            
+            n = str(name).strip()
+            #n = n.replace('/', '_').replace('-', '_')
+            n = re.sub(r'\s+', ' ', n)   # collapse spaces to single space (keep spaces)
+            n = re.sub(r'_+', '_', n)    # collapse consecutive underscores
+            return n
+
+
+def clean_headers(df: pd.DataFrame) -> pd.DataFrame:
+            """Apply normalization to all column headers."""
+            df = df.copy()
+            df.columns = [normalize_header(c) for c in df.columns]
+            return df 
+
+
+
+
+
 def process_payroll_data(directory):
     """
     Reads and processes payroll data from multiple CSV files in the given directory.
@@ -71,12 +99,32 @@ def process_payroll_data(directory):
     """
     all_years_payHist = pd.DataFrame()
 
-    # List all files in the directory
-    files = [file for file in os.listdir(directory) if file.endswith('.csv')]
 
+
+    
+# List all files in the directory
+    files = [file for file in os.listdir(directory) if file.lower().endswith('.csv')]
+
+    frames = []
     for file in files:
         temp_df = pd.read_csv(os.path.join(directory, file), encoding='latin1', low_memory=False)
-        all_years_payHist = pd.concat([all_years_payHist, temp_df], ignore_index=True)
+        temp_df = clean_headers(temp_df)  # <-- normalize column headers BEFORE concat
+        frames.append(temp_df)
+
+    if frames:
+        all_years_payHist = pd.concat(frames, ignore_index=True)
+    else:
+        return all_years_payHist  # empty
+
+
+    # # List all files in the directory
+    # files = [file for file in os.listdir(directory) if file.endswith('.csv')]
+
+    # for file in files:
+    #     temp_df = pd.read_csv(os.path.join(directory, file), encoding='latin1', low_memory=False)
+    #     all_years_payHist = pd.concat([all_years_payHist, temp_df], ignore_index=True)
+
+
 
     # Rename columns for consistency
     column_mapping = {
