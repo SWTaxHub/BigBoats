@@ -1394,3 +1394,291 @@ with pd.ExcelWriter(output_excel, engine='xlsxwriter') as writer:
 
 ### End of Create SG Actual vs SW Map Summary Table
 
+
+# Commented out section for counting unique comments
+# unique_comments = combined_result_df.copy()
+
+# # Create the combined 'FY&Q' column
+# unique_comments["FY&Q"] = unique_comments["Financial_Year"].astype(str) + "_" + unique_comments["FY_Q"].astype(str)
+
+# # Select only the required columns
+# unique_comments = unique_comments[['FY&Q', 'Discrepancy 1 - SW Comment', 'Discrepancy 2 - SW Comment', 'Discrepancy 3 - SW Comment']]
+
+# # Drop duplicate rows
+# unique_comments = unique_comments.drop_duplicates()
+
+
+
+# unique_comments['Comment 1 - Count'] = unique_comments['Discrepancy 1 - SW Comment'].apply(lambda x: x.count('|') + 1 if isinstance(x, str) else 0)
+# unique_comments['Comment 2 - Count'] = unique_comments['Discrepancy 2 - SW Comment'].apply(lambda x: x.count('|') + 1 if isinstance(x, str) else 0)
+# unique_comments['Comment 3 - Count'] = unique_comments['Discrepancy 3 - SW Comment'].apply(lambda x: x.count('|') + 1 if isinstance(x, str) else 0)
+# unique_comments['Total Comments'] = unique_comments['Comment 1 - Count'] + unique_comments['Comment 2 - Count'] + unique_comments['Comment 3 - Count']
+
+# unique_comments = unique_comments.sort_values(by='FY&Q')
+
+# unique_comments['No Payment Under Client Mapping - Comment Count'] = unique_comments.apply(
+#     lambda row: sum(1 for comment in [row['Discrepancy 1 - SW Comment'], row['Discrepancy 2 - SW Comment'], row['Discrepancy 3 - SW Comment']] if 'No payment under Client Mapping' in str(comment)),
+#     axis=1
+# )
+
+# unique_comments['SW Mapping Didn\'t Classify Line - Comment Count'] = unique_comments.apply(
+#     lambda row: sum(1 for comment in [row['Discrepancy 1 - SW Comment'], row['Discrepancy 2 - SW Comment'], row['Discrepancy 3 - SW Comment']] if 'Overpayment, SW Mapping' in str(comment)),
+#     axis=1
+# )
+
+# # Your unique descriptions list
+# unique_descriptions = [
+#     'Additional Hours: LEAVE LOADING 17.5%',
+#     'Vehicle Allowance as OTE',
+#     'MV ALLOWANCE GC as OTE',
+#     'Leave Loading',
+#     'LEAVE LOADING 17.5%',
+#     'Ordinary',
+#     'ANNUAL LEAVE LOADING',
+#     'Staff Training Day'
+# ]
+
+# # Function to check if a comment is an Overpayment or Under payment
+# def is_over_under_payment(comment):
+#     comment = str(comment)
+#     return 'Overpayment' in comment or 'No payment' in comment
+
+# def is_under_payment(comment):
+#     comment = str(comment)
+#     return 'Underpayment' in comment or 'No payment' in comment
+
+# def is_Over_payment(comment):
+#     comment = str(comment)
+#     return 'Overpayment' in comment 
+
+# def is_No_Super(comment):
+#     comment = str(comment)
+#     return 'No Super' in comment
+
+# def client_mapping(comment):
+#     comment = str(comment)
+#     return 'Client Mapping' in comment
+
+# def SW_mapping(comment):
+#     comment = str(comment)
+#     return 'SW Mapping' in comment
+
+# def refer_to_discrepancy_1(comment):
+#     comment = str(comment)
+#     return 'Refer to Discrepancy 1' in comment 
+
+
+# def refer_to_discrepancy_2(comment):
+#     comment = str(comment)
+#     return 'Refer to Discrepancy 2' in comment
+
+# def Mapping_and_Payroll(comment):
+#     comment = str(comment)
+#     return 'Mapping and Payroll issue' in comment
+
+# def Mapping_issue(comment):
+#     comment = str(comment)
+#     return 'Mapping issue with pay run' in comment
+
+# # Create a new column for each unique description to count matches
+# for desc in unique_descriptions:
+#     unique_comments[f'{desc} - Under Payment Count - Discrep 1'] = unique_comments.apply(
+#         lambda row: sum(
+#             1 for comment in [row['Discrepancy 1 - SW Comment']]
+#             if str(comment).strip().endswith(desc) and is_under_payment(comment)
+#         ),
+#         axis=1
+#     )
+
+# for desc in unique_descriptions:
+#     unique_comments[f'{desc} - Over Payment Count - Discrep 1'] = unique_comments.apply(
+#         lambda row: sum(
+#             1 for comment in [row['Discrepancy 1 - SW Comment']]
+#             if str(comment).strip().endswith(desc) and is_Over_payment(comment)
+#         ),
+#         axis=1
+#     )
+
+# unique_descriptions_2 = [
+#     'Underpayment within pay run number'
+# ]
+
+
+# unique_descriptions_3 = [
+#     'Overpayment within pay run number']
+
+# unique_descriptions_3_1 = [
+#     'Overpayment'
+# ]
+
+# unique_descriptions_4 = [
+#     'No Super was paid under pay run number'
+# ]
+
+# unique_descriptions_5 = [
+#     'Client Mapping'
+# ]
+
+# unique_descriptions_6 = [
+#     'Mapping and Payroll issue'
+# ]
+
+# unique_descriptions_7 = [
+#     'Refer to Discrepancy 2'
+# ]
+
+# unique_descriptions_8 = [
+#     'Mapping issue with pay run'
+# ]
+
+# unique_descriptions_9 = [
+#     'SW Mapping'
+# ]
+
+# unique_descriptions_10 = [
+#     'Refer to Discrepancy 2'
+# ]
+
+
+# unique_descriptions_11 = [
+#     'Refer to Discrepancy 1'
+# ]
+
+# for desc in unique_descriptions_2:
+#     unique_comments['Under Payment Count - Discrep 2'] = unique_comments.apply(
+#         lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if is_under_payment(row['Discrepancy 2 - SW Comment']) else 0,
+#         axis=1
+#     )
+ 
+# for desc in unique_descriptions_3:
+#     unique_comments['Over Payment Count - Discrep 2'] = unique_comments.apply(
+#         lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if is_Over_payment(row['Discrepancy 2 - SW Comment']) else 0,
+#         axis=1
+#     )
+
+
+
+# for desc in unique_descriptions_4:
+#     unique_comments['No Super Count - Discrep 2'] = unique_comments.apply(
+#         lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if is_No_Super(row['Discrepancy 2 - SW Comment']) else 0,
+#         axis=1
+#     )
+
+
+# for desc in unique_descriptions_5:
+#     unique_comments['Client Mapping No Pay Count - Discrep 2'] = unique_comments.apply(
+#         lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if client_mapping(row['Discrepancy 2 - SW Comment']) else 0,
+#         axis=1
+#     )
+
+
+
+# for desc in unique_descriptions_11:
+#     unique_comments['Refer to Discrepancy 1 Count - Discrep 3'] = unique_comments.apply(
+#         lambda row: sum(
+#             1 for comment in [row['Discrepancy 3 - SW Comment']]
+#             if str(comment).strip().endswith(desc) and refer_to_discrepancy_1(comment)
+#         ),
+#         axis=1
+#     )
+
+# for desc in unique_descriptions_6:
+#     unique_comments['Mapping and Payroll issue Count - Discrep 3'] = unique_comments.apply(
+#         lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if Mapping_and_Payroll(row['Discrepancy 3 - SW Comment']) else 0,
+#         axis=1
+#     )
+
+
+# for desc in unique_descriptions_7:
+#     unique_comments['Refer to Discrepancy 2 Count - Discrep 3'] = unique_comments.apply(
+#         lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if refer_to_discrepancy_2(row['Discrepancy 3 - SW Comment']) else 0,
+#         axis=1
+#     )
+
+
+# unique_comments['Comment 3 - in Depth'] = np.where(
+#     unique_comments['Discrepancy 3 - SW Comment'].str.contains('Refer to Discrepancy 1', na=False),
+#     unique_comments['Discrepancy 1 - SW Comment'],
+#     np.where(
+#         unique_comments['Discrepancy 3 - SW Comment'].str.contains('Refer to Discrepancy 2', na=False),
+#         unique_comments['Discrepancy 2 - SW Comment'],
+#     np.where(
+#         unique_comments['Discrepancy 3 - SW Comment'].str.contains('Mapping and Payroll issue', na=False),
+#         unique_comments['Discrepancy 3 - SW Comment'],
+#         'N/a'
+#     )
+#     )
+# )
+
+
+# for desc in unique_descriptions_2:
+#     unique_comments['Under Payment Count - Discrep 3 in Depth'] = unique_comments.apply(
+#         lambda row: sum(
+#             1 for comment in [row['Comment 3 - in Depth']]
+#             if str(comment).strip().count(desc) and is_under_payment(comment)
+#         ),
+#         axis=1
+#     )
+
+
+
+# for desc in unique_descriptions_3_1:
+#     unique_comments['Over Payment Count - Discrep 3 in Depth'] = unique_comments.apply(
+#         lambda row: str(row['Comment 3 - in Depth']).count(desc) if is_Over_payment(row['Comment 3 - in Depth']) else 0,
+#         axis=1
+#     )
+
+
+# for desc in unique_descriptions_4:
+#     unique_comments['No Super Count - Discrep 3 in Depth'] = unique_comments.apply(
+#         lambda row: sum(
+#             1 for comment in [row['Comment 3 - in Depth']]
+#             if str(comment).strip().count(desc) and is_No_Super(comment)
+#         ),
+#         axis=1
+#     )
+
+
+
+# for desc in unique_descriptions_5:
+#     unique_comments['Client Mapping No Pay Count - Discrep 3 in Depth'] = unique_comments.apply(
+#         lambda row: str(row['Comment 3 - in Depth']).count(desc) if client_mapping(row['Comment 3 - in Depth']) else 0,
+#         axis=1
+#     )
+
+
+
+    
+# # Export to CSV
+# unique_comments.to_csv('unique_comments.csv', index=False)
+
+# #def commentary(combined_result_df, output_dir="output"):
+# """
+#     Generates commentary based on discrepancies in the DataFrame.
+
+#     Parameters:
+#     df (pd.DataFrame): The input DataFrame containing payroll data.
+#     output_dir (str): Directory where the output CSV should be saved.
+
+#     Returns:
+#     pd.DataFrame: DataFrame with added commentary columns.
+#     """
+# # Step 1: Create a filtered DataFrame
+
+
+# Discprepancy_1 = combined_result_df[combined_result_df['Discrepancy 1 - SW Map Expected / Client Map'] != 0]
+# Discprepancy_2 = combined_result_df[combined_result_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] != 0]
+# Discprepancy_3 = combined_result_df[combined_result_df['Discrepancy 3 - SW Map Expected / Payroll paid'] != 0]
+
+# # get unique QtrEMPLID for Discrepancy 1
+# Discp1_unique_QtrEMPLID = Discprepancy_1['QtrEMPLID'].unique()   
+
+# pd.DataFrame(Discp1_unique_QtrEMPLID, columns=['QtrEMPLID']).to_csv('Discp1_unique_QtrEMPLID.csv', index=False)
+
+
+
+
+# combined_quarterly_summary_Discp1 = combined_quarterly_summary[combined_quarterly_summary['QtrEMPLID'].isin(Discp1_unique_QtrEMPLID)]
+
+
+
