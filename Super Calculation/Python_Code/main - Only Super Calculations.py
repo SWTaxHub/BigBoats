@@ -22,11 +22,6 @@ from pandas import ExcelWriter
 
 # File paths
 #Declare File path for Labour Payroll
-
-
-# File paths as of 19/11/2025
-# File paths
-#Declare File path for Labour Payroll
 Payroll_Labour_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\November Files"
 
 #Declare File path for Offshore Payroll
@@ -52,24 +47,100 @@ Super_Offshore_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Clie
 # Declare file path for combo paycodes
 
 
-# Generate DataFrames
+# Generate DataFrames for Payroll
 Payroll_Labour_data = process_payroll_data(Payroll_Labour_filepath)
-
-
 Payroll_Labour_data.to_csv('Payroll_Labour_data_load.csv', index=False)
 
-
 Payroll_Offshore_data = process_payroll_data(Payroll_Offshore_filepath)
-
+# Generate DataFrames for Super
 Super_Labour_data = process_super_data(Super_Labour_filepath)
 Super_Offshore = process_super_data(Super_Offshore_filepath)
 
 
 
+
+# # # # Start of Merge DataFrames for Labour and Offshore Payroll
+# # # Business Logic overview
+""" 
+1. Financial Year & Quarter Rules
+
+Australian Financial Year: Runs from 1 July to 30 June.
+Quarter Mapping:
+
+Q1: July–September
+Q2: October–December
+Q3: January–March
+Q4: April–June
+
+
+Labour Exception: If the record is flagged as LABOUR and falls on or after 28 June 2024, it is treated as Q1 of the next financial year.
+
+
+2. SG (Superannuation Guarantee) Rate
+
+SG contribution rates are hard-coded by financial year:
+
+FY2021 → 9.5%
+FY2022 → 10%
+FY2023 → 10.5%
+FY2024 → 11%
+FY2025 → 11.5%
+FY2026 → 12%
+
+
+Assumes these rates apply uniformly across all employees and pay codes for that year.
+
+
+3. Paycode Mapping Logic
+
+Paycodes are categorised based on an external mapping file:
+
+Client Mapping: Paycodes marked as SG-relevant for client reporting.
+SW Mapping:
+
+OTE → Ordinary Time Earnings
+S&W → Salaries & Wages
+SUPER - SG → Superannuation contributions
+TAX → Tax-related codes
+
+
+
+
+Assumes mapping file is accurate and up to date.
+
+
+4. OTE and SG Calculations
+
+OTE buckets: Amounts classified as OTE or S&W are summed without caps.
+Expected SG: Calculated as OTE amount × SG rate for both Client and SW mappings.
+Actual SG Paid: Derived from paycodes mapped to SUPER - SG.
+Discrepancy: Difference between Client and SW expected SG is tracked for reconciliation.
+
+
+5. Data Cleansing
+
+Removes rows for:
+
+Specific employee names (likely test or non-payroll entries).
+Keywords indicating adjustments, corrections, or non-standard payments (e.g., “BACKPAY”, “UNPAID”, “CORRECTION”).
+
+
+Assumes these exclusions are correct and do not affect compliance reporting.
+
+
+6. Output
+
+Creates a unique identifier per employee per quarter (QtrEMPLID).
+Saves processed data to CSV for downstream reporting or audit. 
+"""
+
 def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     """
-    Process payroll data, map paycodes to OTE/S&W/SUPER/TAX, compute SG expected & actual,
-    and save a CSV. Returns the processed DataFrame.
+    Normalise and clean key fields.
+    Derive financial year and quarter labels.
+    Map pay codes to categories (OTE, S&W, Super, Tax).
+    Calculate expected and actual superannuation (SG) amounts.
+    Output a processed CSV for reporting.
     """
     # Work on a copy; avoid globals
     payroll_data = Payroll_Labour_data.copy()
@@ -330,16 +401,7 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     cond = payroll_data['Pay Description'].eq('NORMAL -30.4000').fillna(False)
     payroll_data['Pay Description'] = np.where(cond, 'NORMAL', payroll_data['Pay Description'])
 
-# Removed as Hard coded the combined paycode in the mapping file
- 
-    # paycode_mapping['Combined_PayCode'] = (
-    #         paycode_mapping['PayCode'].astype(str) + '_' + paycode_mapping['Description'].astype(str)
-    #     )
 
-    #     # Lists
-
-    # Create list for OTE paycodes for Big Boats (Client Mapping)
-    #Where CLIENT MAP FOR SG is Y return paycode
     OTE_paycodesBigBoats = paycode_mapping.loc[
             paycode_mapping['CLIENT MAP FOR SG'] == 'Y', 'Combined_PayCode'
         ].dropna().tolist()
@@ -448,13 +510,8 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
 
         # ---- 8) IDs & output ----
     payroll_data['QtrEMPLID'] = payroll_data['Emp.Code'].astype(str) + '_' + payroll_data['FY_Q_Label']
-        #payroll_data['QtrEMPLID'] = payroll_data['Full_Name'].astype(str) + '_' + payroll_data['FY_Q_Label']
+       
 
-        # # Optional: rename to tidy if you had Description_x
-        # if desc_col == 'Description_x':
-        #     payroll_data = payroll_data.rename(columns={'Description_x': 'Description'})
-
-        # Save to CSV with dynamic suffix
     filename = f"payroll_data_{file_suffix}.csv"
     payroll_data.to_csv(filename, index=False)
     print(f"Saved to {filename}")
@@ -473,11 +530,54 @@ mergedData_Offshore = payroll_calc(Payroll_Offshore_data, file_suffix="OFFSHORE"
 print(mergedData_Labour.columns)
 
 
-
+# # # # End of merge DataFrames for Labour and Offshore Payroll
 
 
 # # # # Create QTR Results Table 
 
+
+""" Key Business Assumptions
+
+
+Grouping Logic
+
+Each employee-quarter-paycode combination is treated as a unique record for compliance and reporting.
+
+
+
+MCB Threshold
+
+Uses fixed annual OTE caps per financial year to determine SG obligations.
+Assumes these caps align with ATO superannuation guarantee rules.
+
+
+
+Expected SG Calculation
+
+SG is calculated at the financial year’s statutory rate.
+Contributions are capped at MCB for high earners.
+Assumes no other exceptions (e.g., age-based exemptions).
+
+
+
+Mapping Integrity
+
+Relies on accurate classification of pay codes into SW and Client mappings.
+Discrepancy logic assumes mapping errors indicate potential compliance or billing issues.
+
+
+
+Data Cleansing
+
+Assumes upstream payroll data is already cleaned and validated before aggregation.
+
+
+
+Discrepancy Commentary
+
+Flags mismatches between Client and SW mappings as potential overpayment or underpayment risks.
+
+ """
 def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     """
     Aggregates payroll data by employee code, pay code, and fiscal quarter,
@@ -544,10 +644,6 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     quarterly_summary['Pay_Rate'] = quarterly_summary['Pay_Rate'].astype(float).round(2)
 
 
-     # Drop unneeded columns if provided
-   
-    #quarterly_summary = quarterly_summary.drop(columns=columns_to_drop, errors='ignore')  # ignore errors if columns don't exist
-
     
     # # # Step 2:  Add Column MCB
     # 2020 - 2021 - $57 090
@@ -611,15 +707,6 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     quarterly_summary['Above / Met cap'] = np.where(quarterly_summary['SW Map - OTE (not capped)'] > quarterly_summary['MCB'], 'Above / met cap', 
         np.where(quarterly_summary['SW Map - OTE (not capped)'] < quarterly_summary['MCB'], 'Below cap', "N/A"))
     
-
-    # commented out 27/06/2025
-
-    # quarterly_summary['Payroll - actual SG paid_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['Payroll - actual SG paid'].cumsum()
-
-    # quarterly_summary['Client Mapping - OTE SG Expected_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['Client Map - OTE SG (Not capped)'].cumsum()
-
-    # quarterly_summary['SW Map - OTE SG expected_CumSum'] = quarterly_summary.groupby(['Pay_Number'])['SW Map - OTE SG (Not capped)'].cumsum()
-
 
 
     # Ensure the output directory exists
@@ -699,24 +786,62 @@ combined_quarterly_summary['Discrepancy 1 - SW Comment'] = combined_quarterly_su
 
 
 combined_quarterly_summary.to_csv('Payroll_Detail.csv', index=False)
-# Problem is that its looking at the current data frame not the instance of the data frame that was used to create the grouped results
-
-# If Payroll - actual SG paid_CumSum == 0 then SW - Final Comment = "SG paid is 0" in paynumber
 
 
+# # # # # End of Create QTR Results Table
 
+
+
+
+
+
+
+# # # # # Start of Create QTR Summary Table
+
+
+""" Key Business Assumptions
+
+
+Quarter-Level Reporting
+
+Each employee-quarter combination is summarised into one record for easier compliance checks and client reporting.
+
+
+
+Aggregation Logic
+
+Totals for monetary values (e.g., SG, OTE).
+Averages for rates (SG rate, pay rate).
+First/last values for identifiers and descriptive fields.
+Assumes these aggregation choices reflect business reporting needs.
+
+
+
+Discrepancy Rules
+
+If actual SG paid = 0, flag as “No Super paid”.
+If expected SG (Client or SW) = 0, flag as mapping issue.
+If expected SG ≠ actual SG, classify as underpayment or overpayment.
+Assumes discrepancies indicate compliance or billing risks.
+
+
+
+Comment Consolidation
+
+Combines multiple pay-run level comments into a single quarter-level summary for clarity.
+Assumes concatenated comments help auditors and managers quickly review anomalies.
+
+
+
+Data Integrity
+
+Relies on upstream data being clean and correctly mapped (e.g., OTE vs SG buckets).
+Assumes SG rate and MCB logic applied earlier remain valid.
+ """
 
 
 # Need to create a dataframe that gets the Amount for quarter rather than the individual pay numbers
 quarter_sum = combined_quarterly_summary
-
-
-
-
-
-
-
-
 
 agg_methods = {\
         'Entity' : 'first',
@@ -833,9 +958,57 @@ quarter_sum['Discrepancy 3 - SW Comment'] = quarter_sum.apply(generate_comment2,
 
 quarter_sum.to_csv('Quarterly_Sum.csv', index=False)
 
+ # # # # # End of Create QTR Summary Table
 
 
 
+# # # # # Start of Create SG Actual vs SW Map Summary Table
+""" Key Business Assumptions
+
+
+Quarter-level reconciliation
+
+QtrEMPLID uniquely represents employee + financial quarter; aggregation is performed only at this grain for compliance reporting.
+
+
+
+MCB (Minimum Contribution Benchmark) as cap basis
+
+OTE for SG purposes is capped at MCB when OTE exceeds it.
+Expected SG is therefore calculated against the capped OTE in final reconciliation, reflecting ATO SG cap practice for high earners.
+
+
+
+Expected vs Actual logic
+
+Expected SG (Client vs SW) is derived from OTE buckets and the statutory SG rate for the year.
+Actual SG paid comes from payroll and is the source of truth for payment.
+The three discrepancies (Client vs SW expectations; actual vs each expectation) are primary signals for:
+
+Misclassification of pay codes (mapping issues),
+Payroll under/overpayments,
+Combined classification/payment problems.
+
+
+
+
+
+Materiality threshold
+
+Discrepancies within ±$0.08 are considered immaterial, reducing noise in audit reviews.
+
+
+
+Tolerance in diagnostic matching
+
+Uses numeric tolerance (0.07 / 0.03) to identify near‑equal relationships between discrepancies; this acknowledges rounding and minor variances in SG computation across systems.
+
+
+
+Comment consolidation
+
+Quarter‑level commentary aggregates all underlying pay‑run comments so reviewers have context in a single row; assumes quarter_sum is correctly prepared.
+ """
 
 
 def SG_actual_Vs_SW_Map(df, output_dir="output"):
@@ -1036,15 +1209,7 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
 
 
 
-    # grouped_df['Diff_MCB_Vs_OTE_(Client + SW Map)'] = grouped_df['MCB'] - grouped_df['OTE (Client + SW Map)']
-    # grouped_df['Diff_MCB_Vs_OTE_(Client + SW Map)'] = grouped_df['Diff_MCB_Vs_OTE_(Client + SW Map)'].astype(float).round(2)
-
-
-    # grouped_df['Above / Below Cap (Client + SW Map)'] = np.where(
-    #   grouped_df['Diff_MCB_Vs_OTE_(Client + SW Map)'] < 0, 'Above Cap',
-    #     np.where(grouped_df['Diff_MCB_Vs_OTE_(Client + SW Map)'] > 0, 'Below Cap', 'Cap Met')
-    # )
-    # grouped_df['Above / Below Cap (Client + SW Map)'] = grouped_df['Above / Below Cap (Client + SW Map)'].astype(str)
+  
 
     grouped_df['SG Paid => SG up to cap'] = np.where(
         grouped_df['Payroll - actual SG paid'] < (grouped_df['MCB'] * grouped_df['SG_Rate']), 'Below Cap',
@@ -1061,14 +1226,6 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
        
     )
 
-    # grouped_df['SW Map - OTE SG (Capped to MCB)'] = np.where(
-    #     grouped_df['SW Map - OTE (not capped)'] == (grouped_df['MCB']), grouped_df['MCB'] * grouped_df['SG_Rate'],
-    #     np.where(
-    #         grouped_df['SW Map - OTE (not capped)'] > (grouped_df['MCB']),
-    #         grouped_df['MCB'] * grouped_df['SG_Rate']
-    #     ),
-    #     grouped_df['SW Map - OTE (not capped)'] * grouped_df['SG_Rate']
-    # )
 
     grouped_df['SW Map - OTE SG (Capped to MCB)'] = np.where(
     grouped_df['SW Map - OTE (not capped)'] > grouped_df['MCB'],
@@ -1117,7 +1274,7 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
 
     
     grouped_df.loc[mask, 'Discrepancy 1 - SW Comment'] = "No Discrepancy / Immaterial"
-    #grouped_df.loc[mask, 'Discrepancy 2 - SW Comment'] = "No Discrepancy / Immaterial"
+ 
 
     
     mask1 = (
@@ -1153,20 +1310,7 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
     grouped_df['Discrepancy 3 - SW Comment'] = grouped_df['Discrepancy 3 - SW Comment'].apply(clean_discrepancy_comment)
 
 
-    # # Assuming your DataFrame is df and the column is 'Discrepancy 1 - SW Comment'
-    # valid_comment_mask = grouped_df['Discrepancy 1 - SW Comment'].str.contains(
-    #     r'No payment under Client Mapping|SW Mapping didn\'t classify line|Pay Description:', 
-    #     na=False
-    # )
 
-    # # Apply the filter
-    # grouped_df = grouped_df[valid_comment_mask].copy()
-    
-
-    #grouped_df['Discrepancy 1 - SW Comment'] = df['Discrepancy 1 - SW Comment'].apply(lambda x: re.sub(r'\s*\|\s*(?=\s*\|)', '', str(x)).strip('| '))
-
-
-    # Maybe should three columns for Materality and one for the comment
 
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
@@ -1248,318 +1392,5 @@ with pd.ExcelWriter(output_excel, engine='xlsxwriter') as writer:
 
 
 
-unique_comments = combined_result_df.copy()
-
-# Create the combined 'FY&Q' column
-unique_comments["FY&Q"] = unique_comments["Financial_Year"].astype(str) + "_" + unique_comments["FY_Q"].astype(str)
-
-# Select only the required columns
-unique_comments = unique_comments[['FY&Q', 'Discrepancy 1 - SW Comment', 'Discrepancy 2 - SW Comment', 'Discrepancy 3 - SW Comment']]
-
-# Drop duplicate rows
-unique_comments = unique_comments.drop_duplicates()
-
-
-
-unique_comments['Comment 1 - Count'] = unique_comments['Discrepancy 1 - SW Comment'].apply(lambda x: x.count('|') + 1 if isinstance(x, str) else 0)
-unique_comments['Comment 2 - Count'] = unique_comments['Discrepancy 2 - SW Comment'].apply(lambda x: x.count('|') + 1 if isinstance(x, str) else 0)
-unique_comments['Comment 3 - Count'] = unique_comments['Discrepancy 3 - SW Comment'].apply(lambda x: x.count('|') + 1 if isinstance(x, str) else 0)
-unique_comments['Total Comments'] = unique_comments['Comment 1 - Count'] + unique_comments['Comment 2 - Count'] + unique_comments['Comment 3 - Count']
-
-unique_comments = unique_comments.sort_values(by='FY&Q')
-
-unique_comments['No Payment Under Client Mapping - Comment Count'] = unique_comments.apply(
-    lambda row: sum(1 for comment in [row['Discrepancy 1 - SW Comment'], row['Discrepancy 2 - SW Comment'], row['Discrepancy 3 - SW Comment']] if 'No payment under Client Mapping' in str(comment)),
-    axis=1
-)
-
-unique_comments['SW Mapping Didn\'t Classify Line - Comment Count'] = unique_comments.apply(
-    lambda row: sum(1 for comment in [row['Discrepancy 1 - SW Comment'], row['Discrepancy 2 - SW Comment'], row['Discrepancy 3 - SW Comment']] if 'Overpayment, SW Mapping' in str(comment)),
-    axis=1
-)
-
-# Your unique descriptions list
-unique_descriptions = [
-    'Additional Hours: LEAVE LOADING 17.5%',
-    'Vehicle Allowance as OTE',
-    'MV ALLOWANCE GC as OTE',
-    'Leave Loading',
-    'LEAVE LOADING 17.5%',
-    'Ordinary',
-    'ANNUAL LEAVE LOADING',
-    'Staff Training Day'
-]
-
-# Function to check if a comment is an Overpayment or Under payment
-def is_over_under_payment(comment):
-    comment = str(comment)
-    return 'Overpayment' in comment or 'No payment' in comment
-
-def is_under_payment(comment):
-    comment = str(comment)
-    return 'Underpayment' in comment or 'No payment' in comment
-
-def is_Over_payment(comment):
-    comment = str(comment)
-    return 'Overpayment' in comment 
-
-def is_No_Super(comment):
-    comment = str(comment)
-    return 'No Super' in comment
-
-def client_mapping(comment):
-    comment = str(comment)
-    return 'Client Mapping' in comment
-
-def SW_mapping(comment):
-    comment = str(comment)
-    return 'SW Mapping' in comment
-
-def refer_to_discrepancy_1(comment):
-    comment = str(comment)
-    return 'Refer to Discrepancy 1' in comment 
-
-
-def refer_to_discrepancy_2(comment):
-    comment = str(comment)
-    return 'Refer to Discrepancy 2' in comment
-
-def Mapping_and_Payroll(comment):
-    comment = str(comment)
-    return 'Mapping and Payroll issue' in comment
-
-def Mapping_issue(comment):
-    comment = str(comment)
-    return 'Mapping issue with pay run' in comment
-
-# Create a new column for each unique description to count matches
-for desc in unique_descriptions:
-    unique_comments[f'{desc} - Under Payment Count - Discrep 1'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Discrepancy 1 - SW Comment']]
-            if str(comment).strip().endswith(desc) and is_under_payment(comment)
-        ),
-        axis=1
-    )
-
-for desc in unique_descriptions:
-    unique_comments[f'{desc} - Over Payment Count - Discrep 1'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Discrepancy 1 - SW Comment']]
-            if str(comment).strip().endswith(desc) and is_Over_payment(comment)
-        ),
-        axis=1
-    )
-
-unique_descriptions_2 = [
-    'Underpayment within pay run number'
-]
-
-
-unique_descriptions_3 = [
-    'Overpayment within pay run number']
-
-unique_descriptions_3_1 = [
-    'Overpayment'
-]
-
-unique_descriptions_4 = [
-    'No Super was paid under pay run number'
-]
-
-unique_descriptions_5 = [
-    'Client Mapping'
-]
-
-unique_descriptions_6 = [
-    'Mapping and Payroll issue'
-]
-
-unique_descriptions_7 = [
-    'Refer to Discrepancy 2'
-]
-
-unique_descriptions_8 = [
-    'Mapping issue with pay run'
-]
-
-unique_descriptions_9 = [
-    'SW Mapping'
-]
-
-unique_descriptions_10 = [
-    'Refer to Discrepancy 2'
-]
-
-
-unique_descriptions_11 = [
-    'Refer to Discrepancy 1'
-]
-
-for desc in unique_descriptions_2:
-    unique_comments['Under Payment Count - Discrep 2'] = unique_comments.apply(
-        lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if is_under_payment(row['Discrepancy 2 - SW Comment']) else 0,
-        axis=1
-    )
- 
-for desc in unique_descriptions_3:
-    unique_comments['Over Payment Count - Discrep 2'] = unique_comments.apply(
-        lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if is_Over_payment(row['Discrepancy 2 - SW Comment']) else 0,
-        axis=1
-    )
-
-
-# for desc in unique_descriptions_4:
-#     unique_comments['No Super Count - Discrep 2'] = unique_comments.apply(
-#         lambda row: sum(
-#             1 for comment in [row['Discrepancy 2 - SW Comment']]
-#             if str(comment).strip().__contains__(desc) and is_No_Super(comment)
-#         ),
-#         axis=1
-#     )
-for desc in unique_descriptions_4:
-    unique_comments['No Super Count - Discrep 2'] = unique_comments.apply(
-        lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if is_No_Super(row['Discrepancy 2 - SW Comment']) else 0,
-        axis=1
-    )
-
-
-for desc in unique_descriptions_5:
-    unique_comments['Client Mapping No Pay Count - Discrep 2'] = unique_comments.apply(
-        lambda row: str(row['Discrepancy 2 - SW Comment']).count(desc) if client_mapping(row['Discrepancy 2 - SW Comment']) else 0,
-        axis=1
-    )
-
-
-
-for desc in unique_descriptions_11:
-    unique_comments['Refer to Discrepancy 1 Count - Discrep 3'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Discrepancy 3 - SW Comment']]
-            if str(comment).strip().endswith(desc) and refer_to_discrepancy_1(comment)
-        ),
-        axis=1
-    )
-
-for desc in unique_descriptions_6:
-    unique_comments['Mapping and Payroll issue Count - Discrep 3'] = unique_comments.apply(
-        lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if Mapping_and_Payroll(row['Discrepancy 3 - SW Comment']) else 0,
-        axis=1
-    )
-
-
-for desc in unique_descriptions_7:
-    unique_comments['Refer to Discrepancy 2 Count - Discrep 3'] = unique_comments.apply(
-        lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if refer_to_discrepancy_2(row['Discrepancy 3 - SW Comment']) else 0,
-        axis=1
-    )
-
-
-unique_comments['Comment 3 - in Depth'] = np.where(
-    unique_comments['Discrepancy 3 - SW Comment'].str.contains('Refer to Discrepancy 1', na=False),
-    unique_comments['Discrepancy 1 - SW Comment'],
-    np.where(
-        unique_comments['Discrepancy 3 - SW Comment'].str.contains('Refer to Discrepancy 2', na=False),
-        unique_comments['Discrepancy 2 - SW Comment'],
-    np.where(
-        unique_comments['Discrepancy 3 - SW Comment'].str.contains('Mapping and Payroll issue', na=False),
-        unique_comments['Discrepancy 3 - SW Comment'],
-        'N/a'
-    )
-    )
-)
-
-
-for desc in unique_descriptions_2:
-    unique_comments['Under Payment Count - Discrep 3 in Depth'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Comment 3 - in Depth']]
-            if str(comment).strip().count(desc) and is_under_payment(comment)
-        ),
-        axis=1
-    )
-
-
-
-for desc in unique_descriptions_3_1:
-    unique_comments['Over Payment Count - Discrep 3 in Depth'] = unique_comments.apply(
-        lambda row: str(row['Comment 3 - in Depth']).count(desc) if is_Over_payment(row['Comment 3 - in Depth']) else 0,
-        axis=1
-    )
-
-
-for desc in unique_descriptions_4:
-    unique_comments['No Super Count - Discrep 3 in Depth'] = unique_comments.apply(
-        lambda row: sum(
-            1 for comment in [row['Comment 3 - in Depth']]
-            if str(comment).strip().count(desc) and is_No_Super(comment)
-        ),
-        axis=1
-    )
-
-# for desc in unique_descriptions_5:
-#     unique_comments['Client Mapping No Pay Count - Discrep 3 in Depth'] = unique_comments.apply(
-#         lambda row: sum(
-#             1 for comment in [row['Comment 3 - in Depth']]
-#             if str(comment).strip().count(desc) and client_mapping(comment)
-#         ),
-#         axis=1
-#     )
-
-for desc in unique_descriptions_5:
-    unique_comments['Client Mapping No Pay Count - Discrep 3 in Depth'] = unique_comments.apply(
-        lambda row: str(row['Comment 3 - in Depth']).count(desc) if client_mapping(row['Comment 3 - in Depth']) else 0,
-        axis=1
-    )
-
-
-# commented out due to no need for this column - 1/07/2025
-# for desc in unique_descriptions_8:
-#     unique_comments['Mapping issue Count - Discrep 3'] = unique_comments.apply(
-#         lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if Mapping_issue(row['Discrepancy 3 - SW Comment']) else 0,
-#         axis=1
-#     )
-
-# for desc in unique_descriptions_4:
-#     unique_comments[f'{desc} - No Super Count - Discrep 3'] = unique_comments.apply(
-#         lambda row: str(row['Discrepancy 3 - SW Comment']).count(desc) if is_No_Super(row['Discrepancy 3 - SW Comment']) else 0,
-#         axis=1
-#     )
-
-    
-# Export to CSV
-unique_comments.to_csv('unique_comments.csv', index=False)
-
-#def commentary(combined_result_df, output_dir="output"):
-"""
-    Generates commentary based on discrepancies in the DataFrame.
-
-    Parameters:
-    df (pd.DataFrame): The input DataFrame containing payroll data.
-    output_dir (str): Directory where the output CSV should be saved.
-
-    Returns:
-    pd.DataFrame: DataFrame with added commentary columns.
-    """
-# Step 1: Create a filtered DataFrame
-
-
-Discprepancy_1 = combined_result_df[combined_result_df['Discrepancy 1 - SW Map Expected / Client Map'] != 0]
-Discprepancy_2 = combined_result_df[combined_result_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] != 0]
-Discprepancy_3 = combined_result_df[combined_result_df['Discrepancy 3 - SW Map Expected / Payroll paid'] != 0]
-
-# get unique QtrEMPLID for Discrepancy 1
-Discp1_unique_QtrEMPLID = Discprepancy_1['QtrEMPLID'].unique()   
-
-pd.DataFrame(Discp1_unique_QtrEMPLID, columns=['QtrEMPLID']).to_csv('Discp1_unique_QtrEMPLID.csv', index=False)
-
-
-# Where QtrEMPLID is in the list of unique QtrEMPLID for Discrepancy 1 find rows where combined_quarterly_summary['Client Map - OTE SG (Not capped)'] - combined_quarterly_summary['SW Map - OTE SG (Not capped)'] != 0
-# and return the values in columns PayCode and Pay_Number
-
-
-
-combined_quarterly_summary_Discp1 = combined_quarterly_summary[combined_quarterly_summary['QtrEMPLID'].isin(Discp1_unique_QtrEMPLID)]
-
-
+### End of Create SG Actual vs SW Map Summary Table
 
