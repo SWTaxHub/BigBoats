@@ -596,7 +596,6 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     agg_methods = {
         'Full_Name': 'first',  
         'Pay_Number': 'first',
-        #'Unique_Key': 'first',
         'Line': 'first',
         'Code': 'first',
         'Pay Description': 'first',
@@ -646,7 +645,6 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
 
     
     # # # Step 2:  Add Column MCB
-    # 2020 - 2021 - $57 090
 
     quarterly_summary['MCB'] = np.where(
         quarterly_summary['Financial_Year'] == 2021, 57090, # Need to confirm with Paul or Ollie if this is correct
@@ -661,15 +659,7 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
         )
     )
 
-
-
-    # Where Paycode is in list 1 & is not in list 2
-    # Return Y
-    # If not return N
-
-    # Add two code blocks now for the same but Y or N
-
-
+    # Add Column SW - Expected Minimum SG
     quarterly_summary['SW - Exepected Minimum SG'] = np.where(
     quarterly_summary['SW Map - OTE (not capped)'] > quarterly_summary['MCB'],
     quarterly_summary['MCB'] * quarterly_summary['SG_Rate'], np.where(
@@ -678,7 +668,7 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
        0 
         )
     )
-
+    # Round SW - Expected Minimum SG
     quarterly_summary['SW - Exepected Minimum SG'] = quarterly_summary['SW - Exepected Minimum SG'].astype(float).round(2)
 
 
@@ -694,7 +684,7 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
        0 
         )
     )
-
+    # Round Client - Expected Minimum SG
     quarterly_summary['Client - Exepected Minimum SG'] = quarterly_summary['Client - Exepected Minimum SG'].astype(float).round(2)
 
 
@@ -703,7 +693,7 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     
     
 
-
+    # Add Column Above / Met cap in relation to MCB
     quarterly_summary['Above / Met cap'] = np.where(quarterly_summary['SW Map - OTE (not capped)'] > quarterly_summary['MCB'], 'Above / met cap', 
         np.where(quarterly_summary['SW Map - OTE (not capped)'] < quarterly_summary['MCB'], 'Below cap', "N/A"))
     
@@ -722,12 +712,13 @@ def aggregate_quarterly_data(df, output_dir="output", file_suffix="LABOUR"):
     return quarterly_summary
 
 
-
+# store the quarterly summary dataframes for labour and offshore
 quarterly_summary_LAB = aggregate_quarterly_data(mergedData_Labour)
 quarterly_summary_LAB['Entity'] = 'LABOUR'
 quarterly_summary_OFF = aggregate_quarterly_data(mergedData_Offshore, file_suffix="OFFSHORE")
 quarterly_summary_OFF['Entity'] = 'OFFSHORE'
 
+# Combine both dataframes
 combined_quarterly_summary = pd.concat([quarterly_summary_OFF, quarterly_summary_LAB], ignore_index=True)
 
 
@@ -737,7 +728,7 @@ combined_quarterly_summary['Line_ID'] = combined_quarterly_summary['Pay_Number']
 
 
 
-
+# Add column for Discrepancy 1 - SW Comment if not exists
 if 'SW - Final Comment' not in combined_quarterly_summary.columns:
     combined_quarterly_summary['Discrepancy 1 - SW Comment'] = ''
 
@@ -745,7 +736,7 @@ if 'SW - Final Comment' not in combined_quarterly_summary.columns:
 
 
 
-
+# Function to generate comments based on conditions
 def generate_comment(row):
     if row['SW mapping'] == 'OTE' and row['Client Mapping'] == 'N':
         return f"No payment under Client Mapping {row['Line_ID']} Pay Description: {row['Pay Description']}"
@@ -762,7 +753,7 @@ def generate_comment(row):
     # Add column for Discrepancy 1 - SW Map Expected / Client Map
 combined_quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'] = (combined_quarterly_summary['Client Map - OTE SG (Not capped)'] - combined_quarterly_summary['SW Map - OTE SG (Not capped)']).round(2)
 
-
+# Round Discrepancy 1 - SW Map Expected / Client Map
 combined_quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'] = combined_quarterly_summary['Discrepancy 1 - SW Map Expected / Client Map'].astype(float).round(2)
 
     # Add column for Discrepancy 2 - Client Map - Expected Amount SG
@@ -775,7 +766,7 @@ combined_quarterly_summary['Discrepancy 3 - SW Map Expected / Payroll paid'] = (
 
 combined_quarterly_summary['Discrepancy 3 - SW Map Expected / Payroll paid'] = combined_quarterly_summary['Discrepancy 3 - SW Map Expected / Payroll paid'].astype(float).round(2)
 
-
+# Generate comments for Discrepancy 1 - SW Comment
 combined_quarterly_summary['Discrepancy 1 - SW Comment'] = combined_quarterly_summary.apply(generate_comment, axis=1)
 
 
@@ -849,15 +840,12 @@ agg_methods = {\
         'Full_Name': 'first',  
         'Pay_Number': 'last',
         'Unique_Key': 'last',
-        #'Line': 'first',
         'Hours/Value': 'sum',
         'Pay_Rate': 'mean',
         'Amount': 'sum',
         'SG_Rate': 'mean',
         'FY_Q': 'first',
         'Financial_Year': 'first', 
-        #'Client Mapping': 'first',
-        #'SW mapping': 'first',
         'Client Map - OTE (not capped)': 'sum',
         'SW Map - OTE (not capped)': 'sum',
         'SW Map - S&W (not capped)': 'sum',
@@ -867,12 +855,7 @@ agg_methods = {\
         'Payroll - actual SG paid': 'sum', 
         'SCH - actual SG received': 'sum',
         'MCB' : 'first'
-        # 'OTE (Client + SW Map)': 'sum',
-        # 'OTE SG (Client + SW Map)': 'sum'
-        # 'Payroll - actual SG paid_CumSum' : 'last',
-        # 'Client Mapping - OTE SG Expected_CumSum' : 'last',
-        # 'SW Map - OTE SG expected_CumSum' : 'last',
-        #'Discrepancy 1 - SW Comment': 'first'
+      
 
     }
 
@@ -882,7 +865,6 @@ agg_methods = {\
 
 
 # Check if required columns exist in DataFrame
-#group_by_columns = ['QtrEMPLID', 'Pay_Number']
 group_by_columns = ['QtrEMPLID', 'Period_Ending']
 missing_cols = [col for col in group_by_columns if col not in quarter_sum.columns]
 
@@ -895,12 +877,10 @@ quarter_sum = quarter_sum.groupby(group_by_columns).agg(agg_methods).reset_index
 
 quarter_sum['Pay_Rate'] = quarter_sum['Pay_Rate'].astype(float).round(2)
 
-#quarter_sum['Discrepancy 1 - SW Comment'] =''
 
 # Group by 'Pay_Number' and concatenate 'Discrepancy 1 - SW Comment' values
 comment_concat = (
     combined_quarterly_summary
-    #.groupby('Pay_Number')['Discrepancy 1 - SW Comment']
     .groupby('Unique_Key')['Discrepancy 1 - SW Comment']
     .apply(lambda x: ' | '.join(x.dropna().astype(str)))
     .reset_index()
@@ -909,13 +889,7 @@ comment_concat = (
 
 
 # Merge the concatenated comment back correctly
-#quarter_sum = quarter_sum.merge(comment_concat, on='Pay_Number', how='left')
 quarter_sum = quarter_sum.merge(comment_concat, on='Unique_Key', how='left')
-
-# Rename the merged column to match your naming standard (optional)
-# quarter_sum = quarter_sum.rename(columns={
-#     'Discrepancy 1 - SW Comment': 'Discrepancy_1_SW_Comment_Concat'
-# })
 
 
 
@@ -929,7 +903,6 @@ def generate_comment1(row):
         return f"Client Mapping didn't make payment under pay run unique key: {row['Unique_Key']}"
     # Adde 4/06/2025 as per OM advise
     elif row['Client Map - OTE SG (Not capped)'] != row['Payroll - actual SG paid']:
-        #return f"Underpayment within pay run number: {row['Pay_Number']}" if row['Client Map - OTE SG (Not capped)'] > row['Payroll - actual SG paid'] else f"Overpayment under pay run number: {row['Pay_Number']}"
         return f"Underpayment within pay unique key: {row['Unique_Key']}" if row['Client Map - OTE SG (Not capped)'] > row['Payroll - actual SG paid'] else f"Overpayment under pay unique key: {row['Unique_Key']}"
     else:
         return row.get('Discrepancy 2 - SW Comment', '')
@@ -939,10 +912,10 @@ def generate_comment1(row):
 def generate_comment2(row):
     
     if row['Payroll - actual SG paid'] == 0:
-        #return f"No Super was paid under pay run number: {row['Pay_Number']}"
+        
         return f"No Super was paid under pay unique key: {row['Unique_Key']}"
     elif row['SW Map - OTE SG (Not capped)'] == 0:
-        #return f"SW Mapping didn't make payment under pay run number: {row['Pay_Number']}"
+        
         return f"SW Mapping didn't make payment under pay unique key: {row['Unique_Key']}"
         
     
@@ -1019,15 +992,12 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
         'Full_Name': 'first',  
         'Pay_Number': 'first',
         'Unique_Key': 'first',
-        #'Line': 'first',
         'Hours/Value': 'sum',
         'Pay_Rate': 'mean',
         'Amount': 'sum',
         'SG_Rate': 'mean',
         'FY_Q': 'first',
         'Financial_Year': 'first', 
-        #'Client Mapping': 'first',
-        #'SW mapping': 'first',
         'Client Map - OTE (not capped)': 'sum',
         'SW Map - OTE (not capped)': 'sum',
         'SW Map - S&W (not capped)': 'sum',
@@ -1037,13 +1007,6 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
         'Payroll - actual SG paid': 'sum', 
         'SCH - actual SG received': 'sum',
         'MCB' : 'first'
-        # 'OTE (Client + SW Map)': 'sum',
-        # 'OTE SG (Client + SW Map)': 'sum'
-        
-        # 'Payroll - actual SG paid_CumSum' : 'last',
-        # 'Client Mapping - OTE SG Expected_CumSum' : 'last',
-        # 'SW Map - OTE SG expected_CumSum' : 'last'
-
     }
 
 
@@ -1150,15 +1113,12 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
             return f"Mapping issue with pay run: {row['Unique_Key']} "
 
         elif np.isclose(disc2, disc3, atol=0.07):
-            #return f"Refer to Discrepancy 2 - Client Map Expected / Payroll Paid for more details. Pay run: {row['Pay_Number']}"
             return f"Refer to Discrepancy 2 - Client Map Expected / Payroll Paid for more details. Pay run: {row['Unique_Key']} "
 
         elif np.isclose(disc3, disc1 + disc2, atol=0.03):
-            #return f"Mapping and Payroll issue with pay run: {row['Pay_Number']} refer to Discrepancy 1 and 2 for more details"
             return f"Mapping and Payroll issue with pay run: {row['Unique_Key']} refer to Discrepancy 1 and 2 for more details"
 
         else:
-            #return f"Unknown issue with pay run: {row['Pay_Number']}"
             return f"Unknown issue with pay run: {row['Unique_Key']}"
 
 
@@ -1185,17 +1145,8 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
        'Financial_Year', 'Client Map - OTE (not capped)', 'SW Map - OTE (not capped)',
        'SW Map - S&W (not capped)', 'Client Map - OTE SG (Not capped)',
        'SW Map - OTE SG (Not capped)', 'SW Map - S&W SG (Not capped)',
-       #'SCH - actual SG received', 
        'MCB',
-       #'SG up to MCB client map',
-       #'SG up to MCB SW map',
        'Payroll - actual SG paid', 
-       #'SG Paid => SG up to cap',
-
-        # 'OTE (Client + SW Map)', 'OTE SG (Client + SW Map)',
-        # 'Payroll - actual SG paid_CumSum',
-        # 'Client Mapping - OTE SG Expected_CumSum',
-        # 'SW Map - OTE SG expected_CumSum',
         'Discrepancy 1 - SW Map Expected / Client Map',
        'Discrepancy 2 -  Client Map Expected / Payroll Paid',
        'Discrepancy 3 - SW Map Expected / Payroll paid',
@@ -1210,7 +1161,7 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
 
 
   
-
+   
     grouped_df['SG Paid => SG up to cap'] = np.where(
         grouped_df['Payroll - actual SG paid'] < (grouped_df['MCB'] * grouped_df['SG_Rate']), 'Below Cap',
         np.where(grouped_df['Payroll - actual SG paid'] > (grouped_df['MCB'] * grouped_df['SG_Rate']), 'Above Cap', 'Cap Met')
@@ -1326,19 +1277,11 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
        'Financial_Year', 'Client Map - OTE (not capped)', 'SW Map - OTE (not capped)',
        'SW Map - S&W (not capped)', 'Client Map - OTE SG (Not capped)',
        'SW Map - OTE SG (Not capped)', 'SW Map - S&W SG (Not capped)',
-       #'SCH - actual SG received', 
        'MCB',
        'Client Map - OTE SG (Capped to MCB)',
        'SW Map - OTE SG (Capped to MCB)',
-       #'SG up to MCB client map',
-       #'SG up to MCB SW map',
        'Payroll - actual SG paid', 
        'SG Paid => SG up to cap',
-
-        # 'OTE (Client + SW Map)', 'OTE SG (Client + SW Map)',
-        # 'Payroll - actual SG paid_CumSum',
-        # 'Client Mapping - OTE SG Expected_CumSum',
-        # 'SW Map - OTE SG expected_CumSum',
         'Discrepancy 1 - SW Map Expected / Client Map',
        'Discrepancy 2 -  Client Map Expected / Payroll Paid',
        'Discrepancy 3 - SW Map Expected / Payroll paid',
