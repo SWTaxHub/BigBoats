@@ -865,16 +865,16 @@ def categorise_comment(comment):
     elif comment.endswith("LEAVE LOADING TERM PAY"):
         return "LEAVE LOADING TERM PAY"
     else:
-        return "No Discrepancy"
+        return ""
 
 
 def categorise_comment_under_over(comment):
     if comment.startswith("Overpayment"):
-        return "Overpayment"
+        return "Overpayment" 
     elif comment.startswith("No payment under Client Mapping"):
         return "Underpayment"
     else:
-        return "No Discrepancy"
+        return ""
     
 
 
@@ -883,12 +883,12 @@ combined_quarterly_summary['Discrepancy Under/Over'] = combined_quarterly_summar
 
 combined_quarterly_summary['Discrepancy 1 - Underpayment Comments'] = np.where(
     combined_quarterly_summary['Discrepancy Under/Over'] == 'Underpayment', 
-    combined_quarterly_summary['Discrepancy Category'],
+    combined_quarterly_summary['Discrepancy Category'] + ' - ' + combined_quarterly_summary['Unique_Key'],
     '')
 
 combined_quarterly_summary['Discrepancy 1 - Overpayment Comments'] = np.where(
     combined_quarterly_summary['Discrepancy Under/Over'] == 'Overpayment', 
-    combined_quarterly_summary['Discrepancy Category'],
+    combined_quarterly_summary['Discrepancy Category'] + ' - ' + combined_quarterly_summary['Unique_Key'],
     '')
 
 
@@ -1015,11 +1015,26 @@ comment_concat = (
     .reset_index()
 )
 
+comment_concat2 = (
+    combined_quarterly_summary
+    .groupby('Unique_Key')['Discrepancy 1 - Underpayment Comments'].apply(lambda x: ' | '.join(x.dropna().astype(str)))
+    .reset_index()
+)
+
+comment_concat3 = (
+    combined_quarterly_summary
+    .groupby('Unique_Key')['Discrepancy 1 - Overpayment Comments'].apply(lambda x: ' | '.join(x.dropna().astype(str)))
+    .reset_index()
+)
+
 
 
 # Merge the concatenated comment back correctly
 quarter_sum = quarter_sum.merge(comment_concat, on='Unique_Key', how='left')
 
+quarter_sum = quarter_sum.merge(comment_concat2, on='Unique_Key', how='left')
+
+quarter_sum = quarter_sum.merge(comment_concat3, on='Unique_Key', how='left')
 
 
 
@@ -1095,7 +1110,8 @@ mask1 = (
         (quarter_sum['Discrepancy 2 -  Client Map Expected / Payroll Paid'] < 0.08)
     )
 
-quarter_sum.loc[mask1, 'Discrepancy 2 - SW Comment'] = "No Discrepancy / Immaterial"
+#quarter_sum.loc[mask1, 'Discrepancy 2 - SW Comment'] = "No Discrepancy / Immaterial"
+quarter_sum.loc[mask1, 'Discrepancy 2 - SW Comment'] = ""
 
 mask2 = (
         (quarter_sum['Discrepancy 3 - SW Map Expected / Payroll paid'] > -0.08) &
@@ -1103,6 +1119,55 @@ mask2 = (
     )
 
 quarter_sum.loc[mask2, 'Discrepancy 3 - SW Comment'] = "No Discrepancy / Immaterial"
+
+
+# SW Comment Category
+def categorise_comment(comment):
+    if comment.startswith("Overpayment"):
+        return "Super Overpayment" 
+    
+    elif comment.startswith("Client made one off Super payment"):
+        return "Super Overpayment"
+    
+    elif comment.startswith("No Super"):
+        return "Super No Payment"
+    
+    elif comment.startswith("Underpayment"):
+        return "Super Underpayment"
+    else:
+        return ""
+
+
+
+def categorise_comment_under_over(comment):
+    if comment.startswith("Overpayment"):
+        return "Overpayment" 
+    
+    elif comment.startswith("Client made one off Super payment"):
+        return "Overpayment"
+    
+    elif comment.startswith("No Super"):
+        return "Underpayment"
+    
+    elif comment.startswith("Underpayment"):
+        return "Underpayment"
+    else:
+        return ""
+    
+
+
+quarter_sum['Discrepancy 2 Category'] = quarter_sum['Discrepancy 2 - SW Comment'].apply(categorise_comment)
+quarter_sum['Discrepancy 2 Under/Over'] = quarter_sum['Discrepancy 2 - SW Comment'].apply(categorise_comment_under_over)
+
+quarter_sum['Discrepancy 2 - Underpayment Comments'] = np.where(
+    quarter_sum['Discrepancy 2 Under/Over'] == 'Underpayment', 
+    quarter_sum['Unique_Key'],
+    '')
+
+quarter_sum['Discrepancy 2 - Overpayment Comments'] = np.where(
+    quarter_sum['Discrepancy 2 Under/Over'] == 'Overpayment', 
+    quarter_sum['Unique_Key'],
+    '')
 
 
 
