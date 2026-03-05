@@ -19,7 +19,86 @@ import numpy as np
 from pandas import ExcelWriter  
 
 
+### helper functions ###
+def join_clean(series, sep=" | "):
+    # series: a pandas Series of comments for one Unique_Key
+    cleaned = (
+        series
+        .dropna()
+        .astype(str)
+        .str.replace(r'\s+', ' ', regex=True)  # collapse internal whitespace
+        .str.strip()
+    )
+    # remove empties and common “null-like” strings if they exist
+    cleaned = cleaned[~cleaned.isin(["", "nan", "None", "N/A"])]
+    return sep.join(cleaned)
 
+def has_text(x):
+    return isinstance(x, str) and x.strip() != ""
+
+
+def build_refs(row):
+    refs = []
+
+    # ---- Discrepancy 1 ----
+    d1_under = has_text(row.get('Discrepancy 1 - Underpayment Comments', ''))
+    d1_over  = has_text(row.get('Discrepancy 1 - Overpayment Comments', ''))
+
+    if d1_under and d1_over:
+        refs.append("Discrepancy 1 underpayment and overpayment comments")
+    elif d1_under:
+        refs.append("Discrepancy 1 underpayment comments")
+    elif d1_over:
+        refs.append("Discrepancy 1 overpayment comments")
+
+    # ---- Discrepancy 2 ----
+    d2_under = has_text(row.get('Discrepancy 2 - Underpayment Comments', ''))
+    d2_over  = has_text(row.get('Discrepancy 2 - Overpayment Comments', ''))
+
+    if d2_under and d2_over:
+        refs.append("Discrepancy 2 underpayment and overpayment comments")
+    elif d2_under:
+        refs.append("Discrepancy 2 underpayment comments")
+    elif d2_over:
+        refs.append("Discrepancy 2 overpayment comments")
+
+    return refs
+
+def clean_refs(refs):
+    if not refs:
+        return []
+    cleaned = []
+    seen = set()
+    for r in refs:
+        if not isinstance(r, str):
+            continue
+        r = r.strip()
+        if not r:
+            continue
+        if r not in seen:
+            cleaned.append(r)
+            seen.add(r)
+    return cleaned
+
+
+def clean_disc3_comment(text):
+    if not isinstance(text, str) or text.strip() == "":
+        return text
+
+    s = text
+
+    # Remove 'Refer to .' / 'Refer to  .' variants if refs were empty
+    s = re.sub(r'\s+Refer to\s*\.\s*$', '', s)
+
+    # Collapse repeated whitespace
+    s = re.sub(r'\s{2,}', ' ', s).strip()
+
+    # If you ever end up with duplicate 'Refer to ... Refer to ...'
+    s = re.sub(r'(Refer to\s+)+', 'Refer to ', s)
+
+    return s
+
+### End of Helper Functions ###
 
 # File paths
 #Declare File path for Labour Payroll
@@ -892,6 +971,11 @@ combined_quarterly_summary['Discrepancy 1 - Overpayment Comments'] = np.where(
     '')
 
 
+drop_columns = ['Discrepancy Category', 'Discrepancy Under/Over']
+
+combined_quarterly_summary = combined_quarterly_summary.drop(columns=drop_columns)
+
+
 combined_quarterly_summary.to_csv('Payroll_Detail.csv', index=False)
 
 
@@ -1008,25 +1092,50 @@ quarter_sum['Discrepancy 3 - SW Map Expected / Payroll paid'] = quarter_sum['Dis
 
 
 # Group by 'Pay_Number' and concatenate 'Discrepancy 1 - SW Comment' values
+# comment_concat = (
+#     combined_quarterly_summary
+#     .groupby('Unique_Key')['Discrepancy 1 - SW Comment']
+#     .apply(lambda x: ' | '.join(x.dropna().astype(str)))
+#     .reset_index()
+# )
+
+# comment_concat2 = (
+#     combined_quarterly_summary
+#     .groupby('Unique_Key')['Discrepancy 1 - Underpayment Comments'].apply(lambda x: ' | '.join(x.dropna().astype(str)))
+#     .reset_index()
+# )
+
+# comment_concat3 = (
+#     combined_quarterly_summary
+#     .groupby('Unique_Key')['Discrepancy 1 - Overpayment Comments'].apply(lambda x: ' | '.join(x.dropna().astype(str)))
+#     .reset_index()
+# )
+
+
+
+
+
+
 comment_concat = (
-    combined_quarterly_summary
-    .groupby('Unique_Key')['Discrepancy 1 - SW Comment']
-    .apply(lambda x: ' | '.join(x.dropna().astype(str)))
-    .reset_index()
-)
+        combined_quarterly_summary
+        .groupby('Unique_Key')['Discrepancy 1 - SW Comment']
+        .apply(join_clean)
+        .reset_index()
+    )
 
 comment_concat2 = (
-    combined_quarterly_summary
-    .groupby('Unique_Key')['Discrepancy 1 - Underpayment Comments'].apply(lambda x: ' | '.join(x.dropna().astype(str)))
-    .reset_index()
-)
+        combined_quarterly_summary
+        .groupby('Unique_Key')['Discrepancy 1 - Underpayment Comments']
+        .apply(join_clean)
+        .reset_index()
+    )
 
 comment_concat3 = (
-    combined_quarterly_summary
-    .groupby('Unique_Key')['Discrepancy 1 - Overpayment Comments'].apply(lambda x: ' | '.join(x.dropna().astype(str)))
-    .reset_index()
-)
-
+        combined_quarterly_summary
+        .groupby('Unique_Key')['Discrepancy 1 - Overpayment Comments']
+        .apply(join_clean)
+        .reset_index()
+    )
 
 
 # Merge the concatenated comment back correctly
@@ -1169,9 +1278,9 @@ quarter_sum['Discrepancy 2 - Overpayment Comments'] = np.where(
     quarter_sum['Unique_Key'],
     '')
 
+drop_columns = ['Discrepancy 2 Under/Over']
 
-
-
+quarter_sum = quarter_sum.drop(columns=drop_columns)
 
 # Remove temporary rounded column
 quarter_sum.drop(columns=['Client Map - OTE SG (Not capped) - rounded'], inplace=True)
@@ -1270,27 +1379,53 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
     grouped_df = df.groupby(group_by_columns).agg(agg_methods).reset_index()
 
 
+  
     comment_concat = (
-        quarter_sum
-        .groupby('QtrEMPLID')['Discrepancy 1 - SW Comment']
-        .apply(lambda x: ' | '.join(x.dropna().astype(str)))   
-        .reset_index()
+    quarter_sum
+    .groupby('QtrEMPLID')['Discrepancy 1 - SW Comment']
+    .apply(join_clean)
+    .reset_index()
+)
 
-    )
-
-
-        # Group by 'Pay_Number' and concatenate 'Discrepancy 1 - SW Comment' values
     comment_concat1 = (
         quarter_sum
         .groupby('QtrEMPLID')['Discrepancy 2 - SW Comment']
-        .apply(lambda x: ' | '.join(x.dropna().astype(str)))
+        .apply(join_clean)
         .reset_index()
     )
 
     comment_concat2 = (
         quarter_sum
         .groupby('QtrEMPLID')['Discrepancy 3 - SW Comment']
-        .apply(lambda x: ' | '.join(x.dropna().astype(str)))
+        .apply(join_clean)
+        .reset_index()
+    )
+
+    comment_concat_Discrep1_under = (
+        quarter_sum
+        .groupby('QtrEMPLID')['Discrepancy 1 - Underpayment Comments']
+        .apply(join_clean)
+        .reset_index()
+    )
+
+    comment_concat_Discrep1_Over = (
+        quarter_sum
+        .groupby('QtrEMPLID')['Discrepancy 1 - Overpayment Comments']
+        .apply(join_clean)
+        .reset_index()
+    )
+
+    comment_concat_Discrep2_under = (
+        quarter_sum
+        .groupby('QtrEMPLID')['Discrepancy 2 - Underpayment Comments']
+        .apply(join_clean)
+        .reset_index()
+    )
+
+    comment_concat_Discrep2_Over = (
+        quarter_sum
+        .groupby('QtrEMPLID')['Discrepancy 2 - Overpayment Comments']
+        .apply(join_clean)
         .reset_index()
     )
 
@@ -1301,6 +1436,12 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
     grouped_df = grouped_df.merge(comment_concat1, on='QtrEMPLID', how='left')
 
     grouped_df = grouped_df.merge(comment_concat2, on='QtrEMPLID', how='left')
+
+    grouped_df = grouped_df.merge(comment_concat_Discrep1_under, on='QtrEMPLID', how='left')
+    grouped_df = grouped_df.merge(comment_concat_Discrep1_Over, on='QtrEMPLID', how='left')
+
+    grouped_df = grouped_df.merge(comment_concat_Discrep2_under, on='QtrEMPLID', how='left')
+    grouped_df = grouped_df.merge(comment_concat_Discrep2_Over, on='QtrEMPLID', how='left')
 
     columns_to_drop = ['Pay_Number', 'Line', 'Hours/Value', 'Pay_Rate', 'Pay Description', 'Amount', 'Unique_Key']
      # Drop unneeded columns if provided
@@ -1349,28 +1490,52 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
 
       
 
+    # def generate_comment_Discrep_3(row):
+    #     disc1 = row['Discrepancy 1 - SW Map Expected / Client Map']
+    #     disc2 = row['Discrepancy 2 -  Client Map Expected / Payroll Paid']
+    #     disc3 = row['Discrepancy 3 - SW Map Expected / Payroll paid']
+
+    #     if np.isclose(disc1, disc3, atol=0.07):
+    #        # return f"Mapping issue with pay run: {row['Pay_Number']}"
+    #         return f"Mapping issue with pay run: {row['Unique_Key']} "
+
+    #     elif np.isclose(disc2, disc3, atol=0.07):
+    #         return f"Refer to Discrepancy 2 - Client Map Expected / Payroll Paid for more details. Pay run: {row['Unique_Key']} "
+
+    #     #elif np.isclose(disc3, disc1 + disc2, atol=0.03):
+    #     elif np.isclose(disc3, disc1 + disc2, atol=0.07):
+    #         return f"Mapping and Payroll issue with pay run: {row['Unique_Key']} refer to Discrepancy 1 and 2 for more details"
+
+    #     else:
+    #         return f"Unknown issue with pay run: {row['Unique_Key']}"
+
+    
+
     def generate_comment_Discrep_3(row):
         disc1 = row['Discrepancy 1 - SW Map Expected / Client Map']
         disc2 = row['Discrepancy 2 -  Client Map Expected / Payroll Paid']
         disc3 = row['Discrepancy 3 - SW Map Expected / Payroll paid']
 
+        refs = build_refs(row)
+        ref_text = (" Refer to " + " and ".join(refs) + ".") if refs else ""
+
         if np.isclose(disc1, disc3, atol=0.07):
-           # return f"Mapping issue with pay run: {row['Pay_Number']}"
-            return f"Mapping issue with pay run: {row['Unique_Key']} "
+            return "Mapping issue at quarter level." + ref_text
 
         elif np.isclose(disc2, disc3, atol=0.07):
-            return f"Refer to Discrepancy 2 - Client Map Expected / Payroll Paid for more details. Pay run: {row['Unique_Key']} "
+            return "Payroll payment issue at quarter level." + ref_text
 
         elif np.isclose(disc3, disc1 + disc2, atol=0.03):
-            return f"Mapping and Payroll issue with pay run: {row['Unique_Key']} refer to Discrepancy 1 and 2 for more details"
+            return "Mapping and payroll issue at quarter level." + ref_text
 
         else:
-            return f"Unknown issue with pay run: {row['Unique_Key']}"
+            return "Unknown issue at quarter level." + ref_text
 
 
     
-    grouped_df['Discrepancy 3 - SW Comment'] = grouped_df.apply(generate_comment_Discrep_3, axis=1)
-
+    grouped_df['Discrepancy 3 - SW Comment'] = (
+        grouped_df.apply(generate_comment_Discrep_3, axis=1)
+        .apply(clean_disc3_comment))
     
     # Added 4/06/2025 as per OM advise
 
@@ -1395,8 +1560,15 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
        'Payroll - actual SG paid', 
         'Discrepancy 1 - SW Map Expected / Client Map',
        'Discrepancy 2 -  Client Map Expected / Payroll Paid',
+       
        'Discrepancy 3 - SW Map Expected / Payroll paid',
-       'Discrepancy 1 - SW Comment', 'Discrepancy 2 - SW Comment',
+       #'Discrepancy 1 - SW Comment', 
+       'Discrepancy 1 - Underpayment Comments',
+       'Discrepancy 1 - Overpayment Comments',
+       
+       #'Discrepancy 2 - SW Comment',
+       'Discrepancy 2 - Overpayment Comments',
+       'Discrepancy 2 - Underpayment Comments',
        'Discrepancy 3 - SW Comment']
 
         
@@ -1544,7 +1716,12 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
         'Discrepancy 1 - SW Map Expected / Client Map',
        'Discrepancy 2 -  Client Map Expected / Payroll Paid',
        'Discrepancy 3 - SW Map Expected / Payroll paid',
-       'Discrepancy 1 - SW Comment', 'Discrepancy 2 - SW Comment',
+      # 'Discrepancy 1 - SW Comment',
+         'Discrepancy 1 - Underpayment Comments',
+         'Discrepancy 1 - Overpayment Comments',
+        #'Discrepancy 2 - SW Comment',
+        'Discrepancy 2 - Overpayment Comments',
+       'Discrepancy 2 - Underpayment Comments',
        'Discrepancy 3 - SW Comment']
     
     grouped_df = grouped_df[column_order]
@@ -1587,12 +1764,63 @@ sheet_names = ['Qtr_Discrepancy_Results', 'Pay_Number_Summary', 'Payroll Detail'
 output_excel = 'client_payroll_analysis.xlsx'
 
 
-# Write each DataFrame to a separate sheet
+dataframes = [combined_result_df, quarter_sum, combined_quarterly_summary]
+sheet_names = ['Qtr_Discrepancy_Results', 'Pay_Number_Summary', 'Payroll Detail']
+output_excel = 'client_payroll_analysis.xlsx'
+
+# ✅ Put it HERE (before the ExcelWriter)
+big_comment_cols = {
+    "Discrepancy 1 - SW Comment",
+    "Discrepancy 2 - SW Comment",
+    "Discrepancy 3 - SW Comment",
+    "Discrepancy 1 - Underpayment Comments",
+    "Discrepancy 1 - Overpayment Comments",
+    "Discrepancy 2 - Underpayment Comments",
+    "Discrepancy 2 - Overpayment Comments",
+}
+
 with pd.ExcelWriter(output_excel, engine='xlsxwriter') as writer:
+    workbook = writer.book
+
+    top_left = workbook.add_format({'align': 'left', 'valign': 'top'})
+    top_left_wrap = workbook.add_format({'align': 'left', 'valign': 'top', 'text_wrap': True})
+    header_fmt = workbook.add_format({'bold': True, 'align': 'left', 'valign': 'top'})
+
+    min_big_comment_width = 40
+    max_big_comment_width = 70
+    max_other_width = 25
+
     for df, sheet_name in zip(dataframes, sheet_names):
         df.to_excel(writer, sheet_name=sheet_name, index=False)
+        worksheet = writer.sheets[sheet_name]
 
+        worksheet.freeze_panes(1, 0)
 
+        # (optional) rewrite headers with formatting
+        for col_num, col_name in enumerate(df.columns):
+            worksheet.write(0, col_num, col_name, header_fmt)
 
+        for col_num, col_name in enumerate(df.columns):
+            max_len = max(df[col_name].astype(str).map(len).max(), len(col_name))
+
+            # ✅ Use big_comment_cols HERE
+            if col_name in big_comment_cols:
+                width = max(min_big_comment_width, min(max_len + 2, max_big_comment_width))
+                worksheet.set_column(col_num, col_num, width, top_left_wrap)
+
+            elif "Comment" in col_name:
+                # other comment-like fields (still wrap, smaller min)
+                width = min(max_len + 2, 55)
+                worksheet.set_column(col_num, col_num, width, top_left_wrap)
+
+            else:
+                width = min(max_len + 2, max_other_width)
+                worksheet.set_column(col_num, col_num, width, top_left)
+
+        # add table styling
+        rows, cols = df.shape
+        worksheet.add_table(0, 0, rows, cols - 1, {
+            'columns': [{'header': c} for c in df.columns],
+            'style': 'Table Style Medium 9'
+        })
 ### End of Create SG Actual vs SW Map Summary Table
-
