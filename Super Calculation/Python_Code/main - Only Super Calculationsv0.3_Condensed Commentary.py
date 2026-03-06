@@ -486,6 +486,11 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
             paycode_mapping['CLIENT MAP FOR SG'] == 'Y', 'Combined_PayCode'
         ].dropna().tolist()
 
+    # Create Secondary list for later mapping to flip Client Mapping to 'N' if paycode is in OTE list but outside effective window
+    No_OTE_paycodesBigBoats = paycode_mapping.loc[
+            paycode_mapping['CLIENT MAP FOR SG'] == 'N', 'Combined_PayCode'
+        ].dropna().tolist()
+
    # --- After reading paycode_mapping ---
     # Parse Effective_To if present (client-only gating)
     if 'Effective_To' in paycode_mapping.columns:
@@ -553,20 +558,60 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     payroll_data['Client_Effective_To'] = payroll_data['Combined_PayCode'].map(effective_to_map)
     payroll_data['Client_Effective_To'] = pd.to_datetime(payroll_data['Client_Effective_To'], errors='coerce')
 
+   
+    
     client_in_effective_window = (
-        payroll_data['Client_Effective_To'].isna() |
-        (payroll_data['Period_Ending'] <= payroll_data['Client_Effective_To'])
-    )
+    payroll_data['Client_Effective_To'].isna() |
+    (payroll_data['Period_Ending'] <= payroll_data['Client_Effective_To'])
+)
 
-        # ---- 5) Mappings ----
+
+
+    # ---- 5) Mappings ----
+
     payroll_data['Client Mapping'] = np.where(
-            payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats) & client_in_effective_window,
+            payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats),
             'Y',
             'N'
         )
+    
+    payroll_data['Client Mapping'] = np.where(
+        payroll_data['Combined_PayCode'].isin(No_OTE_paycodesBigBoats),
+        'N',
+        payroll_data['Client Mapping']
+    )
+    
+
+
+    # 2) base mapping straight from the table
+    base = payroll_data['Client Mapping']
+
+    # 3) invert base mapping (Y->N, N->Y)
+    inverted = np.where(base.eq('Y'), 'N', 'Y')
+
+    
+ 
+    # Only flip paycodes that are actually mapped
+    is_mapped = (
+        payroll_data['Combined_PayCode'].isin(OTE_paycodesBigBoats) |
+        payroll_data['Combined_PayCode'].isin(No_OTE_paycodesBigBoats)
+    )
+
+    # Invert base mapping (Y->N, N->Y)
+    inverted = np.where(base.eq('Y'), 'N', 'Y')
+
+    # Final Client Mapping
+    payroll_data['Client Mapping'] = np.where(
+        client_in_effective_window | ~is_mapped,
+        base,
+        inverted
+    )
+
+
+
 
     payroll_data['SW mapping'] = np.select(
-            [
+                [
                 payroll_data['Combined_PayCode'].isin(OTE_paycodesSW),
                 payroll_data['Combined_PayCode'].isin(SnW_paycodesSW),
                 payroll_data['Combined_PayCode'].isin(SUPER_paycodesSW),
