@@ -1100,7 +1100,8 @@ agg_methods = {\
         'SW Map - S&W SG (Not capped)': 'sum',
         'Payroll - actual SG paid': 'sum', 
         'SCH - actual SG received': 'sum',
-        'MCB' : 'first'
+        'MCB' : 'first',
+        'Discrepancy 1 - SW Map Expected / Client Map' : 'sum',
       
 
     }
@@ -1408,7 +1409,10 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
         'SW Map - S&W SG (Not capped)': 'sum',
         'Payroll - actual SG paid': 'sum', 
         'SCH - actual SG received': 'sum',
-        'MCB' : 'first'
+        'MCB' : 'first',
+        'Discrepancy 1 - SW Map Expected / Client Map' : 'sum',
+        'Discrepancy 2 -  Client Map Expected / Payroll Paid' : 'sum',
+        'Discrepancy 3 - SW Map Expected / Payroll paid' : 'sum'
     }
 
 
@@ -1522,15 +1526,15 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
     
     
 
-    # Add column for Discrepancy 1 - SW Map Expected / Client Map
-    grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] = (grouped_df['Client Map - OTE SG (Not capped)'] - grouped_df['SW Map - OTE SG (Not capped)']).round(2)
+    # # Add column for Discrepancy 1 - SW Map Expected / Client Map
+    # grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] = (grouped_df['Client Map - OTE SG (Not capped)'] - grouped_df['SW Map - OTE SG (Not capped)']).round(2)
 
-    # Add column for Discrepancy 2 - Client Map - Expected Total SG
+    # # Add column for Discrepancy 2 - Client Map - Expected Total SG
 
-    grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['Client Map - OTE SG (Not capped)']).round(2)
+    # grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['Client Map - OTE SG (Not capped)']).round(2)
     
-    # Add column for Discrepancy 3 - SW Map Expected / Payroll paid
-    grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['SW Map - OTE SG (Not capped)']).round(2)
+    # # Add column for Discrepancy 3 - SW Map Expected / Payroll paid
+    # grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['SW Map - OTE SG (Not capped)']).round(2)
     
   
 
@@ -1652,9 +1656,10 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
     print('Columns in grouped_df:', grouped_df.columns.tolist())
 
 
-    grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] = (grouped_df['Client Map - OTE SG (Capped to MCB)'] - grouped_df['SW Map - OTE SG (Capped to MCB)']).round(2)
+    #grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] = (grouped_df['Client Map - OTE SG (Capped to MCB)'] - grouped_df['SW Map - OTE SG (Capped to MCB)']).round(2)
+    # grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] = (grouped_df['Discrepancy 1 - SW Map Expected / Client Map']).round(2)
 
-    grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['Client Map - OTE SG (Capped to MCB)']).round(2)
+    # grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['Client Map - OTE SG (Capped to MCB)']).round(2)
 
     # commented out due to 'Code' not existing in grouped_df
     # # Remove overpayments due to super payments
@@ -1670,7 +1675,7 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
 
 
 
-    grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['SW Map - OTE SG (Capped to MCB)']).round(2)
+    #grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid'] = (grouped_df['Payroll - actual SG paid'] - grouped_df['SW Map - OTE SG (Capped to MCB)']).round(2)
 
 
 
