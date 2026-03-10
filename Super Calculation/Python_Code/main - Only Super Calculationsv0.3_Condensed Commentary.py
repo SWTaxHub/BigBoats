@@ -1016,9 +1016,10 @@ combined_quarterly_summary['Discrepancy 1 - Overpayment Comments'] = np.where(
     '')
 
 
-drop_columns = ['Discrepancy Category', 'Discrepancy Under/Over']
+# drop_columns = [#'Discrepancy Category', 
+#                 'Discrepancy Under/Over']
 
-combined_quarterly_summary = combined_quarterly_summary.drop(columns=drop_columns)
+# combined_quarterly_summary = combined_quarterly_summary.drop(columns=drop_columns)
 
 
 combined_quarterly_summary.to_csv('Payroll_Detail.csv', index=False)
@@ -1323,12 +1324,12 @@ quarter_sum['Discrepancy 2 - Overpayment Comments'] = np.where(
     quarter_sum['Unique_Key'],
     '')
 
-drop_columns = ['Discrepancy 2 Under/Over']
+# drop_columns = ['Discrepancy 2 Under/Over']
 
-quarter_sum = quarter_sum.drop(columns=drop_columns)
+#quarter_sum = quarter_sum.drop(columns=drop_columns)
 
 # Remove temporary rounded column
-quarter_sum.drop(columns=['Client Map - OTE SG (Not capped) - rounded'], inplace=True)
+#quarter_sum.drop(columns=['Client Map - OTE SG (Not capped) - rounded'], inplace=True)
 
 quarter_sum.to_csv('Quarterly_Sum.csv', index=False)
 
@@ -1792,6 +1793,7 @@ print(combined_result_df.columns)
 
 filename = os.path.join(output_dir, f"SG_Quarterly_BothEntities.csv")
 combined_result_df.to_csv(filename, index=False)
+
 
 
 
