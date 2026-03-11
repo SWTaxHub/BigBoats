@@ -1696,6 +1696,26 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
         grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid'], errors='coerce'
     )
 
+    # Added 11/03/2026 as per note from PH
+    grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid'] = np.where(
+            grouped_df['SG Paid => SG up to cap'] == 'Above Cap',
+            grouped_df['Payroll - actual SG paid'] - grouped_df['SW Map - OTE SG (Capped to MCB)'],
+            grouped_df['Discrepancy 3 - SW Map Expected / Payroll paid']
+        ).round(2)
+    
+
+    grouped_df['Discrepancy 1 - SW Map Expected / Client Map'] = np.where(
+        grouped_df['SG Paid => SG up to cap'] == 'Above Cap',
+        grouped_df['Client Map - OTE SG (Capped to MCB)'] - grouped_df['SW Map - OTE SG (Capped to MCB)'],
+        grouped_df['Discrepancy 1 - SW Map Expected / Client Map']
+    ).round(2)
+
+    grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid'] = np.where(
+        grouped_df['SG Paid => SG up to cap'] == 'Above Cap',
+        grouped_df['Payroll - actual SG paid'] - grouped_df['Client Map - OTE SG (Capped to MCB)'],
+        grouped_df['Discrepancy 2 -  Client Map Expected / Payroll Paid']
+    ).round(2)
+
     
     
 
@@ -1724,10 +1744,7 @@ def SG_actual_Vs_SW_Map(df, output_dir="output"):
 
     grouped_df.loc[mask2, 'Discrepancy 3 - SW Comment'] = "No Discrepancy / Immaterial"
 
-
-   
-   
-
+    
 
 
     def clean_discrepancy_comment(text):
