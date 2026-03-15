@@ -501,6 +501,16 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     # Build lookup: Combined_PayCode -> Effective_To (client only)
     effective_to_map = paycode_mapping.set_index('Combined_PayCode')['Effective_To'].to_dict()
 
+
+    # Parse Effective_From if present (client-only gating)
+    if 'Effective_From' in paycode_mapping.columns:
+        paycode_mapping['Effective_From'] = pd.to_datetime(paycode_mapping['Effective_From'], errors='coerce')
+    else:
+        paycode_mapping['Effective_From'] = pd.NaT
+    
+    # Build lookup: Combined_PayCode -> Effective_From (client only)
+    effective_from_map = paycode_mapping.set_index('Combined_PayCode')['Effective_From'].to_dict()
+
     
 
     OTE_paycodesSW = paycode_mapping.loc[
@@ -558,11 +568,16 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     payroll_data['Client_Effective_To'] = payroll_data['Combined_PayCode'].map(effective_to_map)
     payroll_data['Client_Effective_To'] = pd.to_datetime(payroll_data['Client_Effective_To'], errors='coerce')
 
+    payroll_data['Client_Effective_From'] = payroll_data['Combined_PayCode'].map(effective_from_map)
+    payroll_data['Client_Effective_From'] = pd.to_datetime(payroll_data['Client_Effective_From'], errors='coerce')
+
    
     
     client_in_effective_window = (
     payroll_data['Client_Effective_To'].isna() |
     (payroll_data['Period_Ending'] <= payroll_data['Client_Effective_To'])
+    ) & (payroll_data['Client_Effective_From'].isna() |
+    (payroll_data['Period_Ending'] >= payroll_data['Client_Effective_From'])    
 )
 
 
@@ -972,6 +987,8 @@ combined_quarterly_summary['Discrepancy 1 - SW Comment'] = combined_quarterly_su
 def categorise_comment(comment):
     if comment.endswith("VEHICLE ALLOWANCE as OTE"):
         return "VEHICLE ALLOWANCE"
+    if comment.endswith("VEHCILE ALLOWANCE"):
+        return "VEHICLE ALLOWANCE"
     elif comment.endswith(" WORKERS COMP EXCESS as OTE"):
         return " WORKERS COMP EXCESS"
     elif comment.endswith("ADDITIONAL HOURS"):
@@ -988,6 +1005,12 @@ def categorise_comment(comment):
         return "ORDINARY"
     elif comment.endswith("LEAVE LOADING TERM PAY"):
         return "LEAVE LOADING TERM PAY"
+    elif comment.endswith("BONUS BY HOURS"):
+        return "BONUS BY HOURS"
+    elif comment.endswith("ORDINARY"):
+        return "ORDINARY"
+    elif comment.endswith("PAID RE SERVICE END MAY"):
+        return "PAID RE SERVICE END MAY"
     else:
         return ""
 
