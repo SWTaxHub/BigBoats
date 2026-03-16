@@ -987,7 +987,7 @@ combined_quarterly_summary['Discrepancy 1 - SW Comment'] = combined_quarterly_su
 def categorise_comment(comment):
     if comment.endswith("VEHICLE ALLOWANCE as OTE"):
         return "VEHICLE ALLOWANCE"
-    if comment.endswith("VEHCILE ALLOWANCE"):
+    elif comment.endswith("VEHICLE ALLOWANCE"):    
         return "VEHICLE ALLOWANCE"
     elif comment.endswith(" WORKERS COMP EXCESS as OTE"):
         return " WORKERS COMP EXCESS"
