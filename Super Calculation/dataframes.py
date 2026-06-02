@@ -38,6 +38,7 @@ Income for Month, Super for Month, Income for Pay, Super For Pay
 
  #Super Analysis using Python
 import pandas as pd 
+import re
 import os
 from pathlib import Path
 
@@ -59,6 +60,19 @@ payHistoryLabour = pd.DataFrame()
 #Merge Dataframes with pandas
 
 
+def normalize_header(name: str) -> str:
+    n = str(name).strip()
+    n = re.sub(r'\s+', ' ', n)
+    n = re.sub(r'_+', '_', n)
+    return n
+
+
+def clean_headers(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df.columns = [normalize_header(c) for c in df.columns]
+    return df 
+
+
 def process_payroll_data(directory):
     """
     Reads and processes payroll data from multiple CSV files in the given directory.
@@ -74,37 +88,41 @@ def process_payroll_data(directory):
     # List all files in the directory
     files = [file for file in os.listdir(directory) if file.endswith('.csv')]
 
+    frames = []
     for file in files:
         temp_df = pd.read_csv(os.path.join(directory, file), encoding='latin1', low_memory=False)
-        all_years_payHist = pd.concat([all_years_payHist, temp_df], ignore_index=True)
+        temp_df = clean_headers(temp_df)
+        frames.append(temp_df)
+
+    if frames:
+        all_years_payHist = pd.concat(frames, ignore_index=True)
+    else:
+        return all_years_payHist
 
     # Rename columns for consistency
     column_mapping = {
         'Period Ending': 'Period_Ending',
         'Full Name': 'Full_Name',
-        #'Pay No.': 'Pay_Number',
+        'Pay No.': 'Pay_Number',
+        'Unique Key': 'Unique_Key',
         'Hours/ Value': 'Hours/Value',
-        'Pay Rate': 'Pay_Rate',
-        'Cost Centre': 'Cost_Centre',
-        'Emp Group': 'Emp_Group'
+        'Rate': 'Pay_Rate',
+        'Code_': 'Emp.Code',
     }
     all_years_payHist.rename(columns=column_mapping, inplace=True)
 
     # Convert data types
     all_years_payHist['Period_Ending'] = pd.to_datetime(all_years_payHist['Period_Ending'], format='%d/%m/%Y', errors='coerce')
     all_years_payHist['Code'] = all_years_payHist['Code'].astype(str)
-#     all_years_payHist['Pay_Number'] = (
-#     all_years_payHist['Pay_Number']
-#     .fillna(0)  # or any default like -1
-#     .astype(int)
-# )
+    all_years_payHist['Pay_Number'] = (
+    all_years_payHist['Pay_Number']
+    .fillna(0)
+    .astype(int)
+)
 
     all_years_payHist['Hours/Value'] = all_years_payHist['Hours/Value'].astype(float)
     all_years_payHist['Pay_Rate'] = all_years_payHist['Pay_Rate'].astype(float)
-    all_years_payHist['Total'] = all_years_payHist['Total'].astype(float)
-
-    print(all_years_payHist.value_counts())
-    print(all_years_payHist.shape)
+    all_years_payHist['Amount'] = all_years_payHist['Amount'].astype(float)
 
     return all_years_payHist
 
@@ -338,12 +356,16 @@ superClearningHouseTPD = pd.DataFrame()
 superClearningHouseTPD = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx"
 
 # Read data from Excel for super clearing house sheet called Append1
-superClearingHouse = pd.read_excel(
-    r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx",
-    sheet_name=['Append1']  # Specifying the sheet to read
-)
-# Access the specific sheet's data
-superClearingHouseData = superClearingHouse['Append1']    
+if os.path.exists(r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx"):
+    superClearingHouse = pd.read_excel(
+        r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx",
+        sheet_name=['Append1']  # Specifying the sheet to read
+    )
+    # Access the specific sheet's data
+    superClearingHouseData = superClearingHouse['Append1']    
+else:
+    superClearingHouse = pd.DataFrame()
+    superClearingHouseData = pd.DataFrame()
 
 
 

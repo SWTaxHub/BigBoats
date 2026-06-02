@@ -1,8 +1,37 @@
-# Maritimo Superannuation Guarantee (SG) Analysis Script
+# Maritimo Superannuation Guarantee (SG) Analysis Scripts
 
 ## Overview
 
-This script validates Superannuation Guarantee contributions for **Maritimo** (two entities: **MARITIMO LABOUR** and **MARITIMO OFFSHORE**). It compares expected SG (based on pay codes and ATO rates) against actual SG paid, flags discrepancies, and produces a consolidated Excel report with commentary.
+There are **two scripts** in this folder. Both validate Superannuation Guarantee contributions for **Maritimo** (two entities: **MARITIMO LABOUR** and **MARITIMO OFFSHORE**). They compare expected SG (based on pay codes and ATO rates) against actual SG paid, flag discrepancies, and produce consolidated reports.
+
+---
+
+## Script Differences
+
+| Aspect | `v0.3_Condensed Commentary.py` | `v1.5_Payroll Tax Recs.py` |
+|---|---|---|
+| **Core focus** | Pure SG discrepancy analysis + detailed commentary | SG discrepancies + **payroll tax classification** |
+| **Client Mapping gating** | `No_OTE_paycodesBigBoats` list + `Effective_To`/`Effective_From` date window (inverts mapping outside window) | Simple `isin(OTE_paycodesBigBoats)` — no date gating |
+| **MCB years** | FY2021–FY2026 (incl. FY2025 $65,070, FY2026 $62,500) | FY2021–FY2024 only (stops at $62,270) |
+| **Exception dates** | Handles `21/12/2023` as a special one-off Super payment | Not handled |
+| **"Above Cap" override** | Recalculates all 3 discrepancies from capped SG columns when above MCB | Not present |
+| **Discrepancy columns** | `Underpayment Comments` / `Overpayment Comments` split (4 cols for Disc 1 & 2) | Plain single columns (`Discrepancy 1 - SW Comment`, etc.) |
+| **Discrepancy Category** | Classifies rows into category + under/over | Not present |
+| **Paycode Summary stage** | Not present | Groups by PayCode, classifies tax/Super/SALSAC/Child/Tax eligibility |
+| **Extra input CSVs** | None | 6 additional: Allowances, Contributions, Deductions, Income cross-entity + Employee_Labels |
+| **Comment analytics** | Not present | Produces `unique_comments.csv` with counts and in-depth tracing |
+| **Excel output** | `client_payroll_analysis.xlsx` with formatting | No Excel file |
+| **Extra CSV outputs** | None | `Paycode_Summary_new_input_file_fullFYs.csv`, `unique_comments.csv`, `Discp1_unique_QtrEMPLID.csv` |
+| **Refer-to footnotes** | Appends "Refer to ..." in Disc 3 comments | Not present |
+
+### Which one to run?
+
+- Run **v0.3** if you only need the SG compliance check with a formatted Excel deliverable.
+- Run **v1.5** if you also need payroll tax classification, paycode-level summaries, and comment analytics.
+
+Both use the same `dataframes.py` and mapping file — core payroll numbers will match.
+
+---
 
 ## Data Flow
 
@@ -16,12 +45,18 @@ All input paths are relative to `Super Calculation\input\`. Source files from On
 Super Calculation\input\
 ├── LABOUR
 │   ├── Payroll\          ← payroll .csv files
-│   └── Super\            ← super .csv files
+│   ├── Super\            ← super .csv files
+│   └── Employee_Labels.csv   (v1.5 only)
 ├── OFFSHORE
 │   ├── Payroll\          ← payroll .csv files
-│   └── Super\            ← super .csv files
-└── PAYCODE_MAPPING
-    └── 1.06.2026_PAYCODE_MAPPING.xlsx
+│   ├── Super\            ← super .csv files
+│   └── Employee_Labels.csv   (v1.5 only)
+├── PAYCODE_MAPPING
+│   └── 2.06.2026_PAYCODE_MAPPING.xlsx
+├── Allowances_crossEntity.csv   (v1.5 only)
+├── Contributions_crossEntity.csv (v1.5 only)
+├── Deductions_crossEntity.csv   (v1.5 only)
+└── Income_crossEntity.csv       (v1.5 only)
 ```
 
 ## Input Data Sources (all under `Super Calculation\input\`)
@@ -32,9 +67,13 @@ Super Calculation\input\
 | Payroll CSVs (Offshore) | `input\OFFSHORE\Payroll\` |
 | Super CSVs (Labour) | `input\LABOUR\Super\` |
 | Super CSVs (Offshore) | `input\OFFSHORE\Super\` |
-| Paycode Mapping | `input\PAYCODE_MAPPING\1.06.2026_PAYCODE_MAPPING.xlsx` (sheet: `UPDATED MAPPING`) |
+| Paycode Mapping | `input\PAYCODE_MAPPING\2.06.2026_PAYCODE_MAPPING.xlsx` (sheet: `UPDATED MAPPING`) |
+| Employee Labels | `input\{ENTITY}\Employee_Labels.csv` (v1.5 only) |
+| Cross-Entity Files | `input\Allowances_crossEntity.csv`, `Contributions_crossEntity.csv`, `Deductions_crossEntity.csv`, `Income_crossEntity.csv` (v1.5 only) |
 
 ## Output Files (`Super Calculation\data\`)
+
+### Common to both scripts
 
 | File | Description |
 |------|-------------|
@@ -46,7 +85,20 @@ Super Calculation\input\
 | `SG_Quarterly_Combined.csv` | Quarter-level SG reconciliation |
 | `SG_Quarterly_BothEntities.csv` | Combined entity quarter results |
 | `combined_result_with_comments.csv` | Final results with commentary |
+
+### v0.3 only
+
+| File | Description |
+|------|-------------|
 | `client_payroll_analysis.xlsx` | **Main deliverable** — 3 sheets: *Qtr_Discrepancy_Results*, *Pay_Number_Summary*, *Payroll Detail* |
+
+### v1.5 only
+
+| File | Description |
+|------|-------------|
+| `Paycode_Summary_new_input_file_fullFYs.csv` | Paycode-level summary with tax/Super/SALSAC/Child classification |
+| `unique_comments.csv` | Comment analytics with counts by type and in-depth tracing |
+| `Discp1_unique_QtrEMPLID.csv` | Filtered discrepancy breakout by employee-quarter |
 
 ## Key Business Logic
 
@@ -65,14 +117,23 @@ Super Calculation\input\
 
 ## How to Run
 
+### v0.3 — Condensed Commentary (SG compliance + Excel output)
+
 ```powershell
 python "Super Calculation\Python_CodeV2\main - Only Super Calculationsv0.3_Condensed Commentary.py"
 ```
 
-Requires: `pandas`, `numpy`, `openpyxl`, `xlsxwriter`
+### v1.5 — Payroll Tax Recs (SG + payroll tax + comment analytics)
+
+```powershell
+python "Super Calculation\Python_CodeV2\main v1.5 - Payroll Tax Recs.py"
+```
+
+**Requires:** `pandas`, `numpy`, `openpyxl`, `xlsxwriter`
 
 ## Notes
 
 - Pay codes with descriptions flagged as adjustments/corrections (BACKPAY, UNPAID, CORRECTION, etc.) are excluded.
 - A defined set of employee names is also excluded (apprentices, contractors, terminated staff).
 - Input paths point to `Super Calculation\input\` — drop the source files into the structure shown above before running.
+- The mapping file `2.06.2026_PAYCODE_MAPPING.xlsx` changed 6 paycodes from OTE to S&W compared to the previous `1.06.2026` version (Casual Bonus, Bonus By Hours, Leave Loading Term Pay, Long Service Leave Term, and two Workers Comp codes), reducing SW OTE by ~$890K.

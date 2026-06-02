@@ -1,9 +1,9 @@
 import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 print(sys.executable)
 
 import re
-
-import os
 from dataframes import(
     # process_income_paycodes,
     # process_deduction_paycodes,
@@ -18,39 +18,22 @@ import numpy as np
 from pandas import ExcelWriter  
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "input")
 
 
 
-# File paths
-#Declare File path for Labour Payroll
+# File paths (all relative to input/)
+Payroll_Labour_filepath   = os.path.join(INPUT_DIR, "LABOUR", "Payroll")
+Payroll_Offshore_filepath = os.path.join(INPUT_DIR, "OFFSHORE", "Payroll")
+Super_Labour_filepath     = os.path.join(INPUT_DIR, "LABOUR", "Super")
+Super_Offshore_filepath   = os.path.join(INPUT_DIR, "OFFSHORE", "Super")
 
-
-# File paths as of 19/11/2025
-# File paths
-#Declare File path for Labour Payroll
-Payroll_Labour_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\November Files"
-
-#Declare File path for Offshore Payroll
-Payroll_Offshore_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Payroll\November Files"
-
-
-#Declare File path for Allowance Paycodes 
-allowancePaycodes_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\Allowances_crossEntity.csv"
-#Declare File path for Contribution Paycodes 
-contributionPaycodes_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\Contributions_crossEntity.csv"
-#Declare File path for Deductions Paycodes 
-deductionsPaycodes_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\Deductions_crossEntity.csv"
-#Declare File path for Income Paycodes 
-incomePaycodes_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\Income_crossEntity.csv"
-#Declare File path for Employee Labels Labour
-Employee_labelsLabour_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Employee details\Employee_Labels.csv"
-#Declare File path for Employee Labels Offshore
-Employee_labelsOffshore_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Employee details\Employee_Labels.csv"
-# Declare File path for Super Labour
-Super_Labour_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Super\CSVs"
-# Declare file path for super offshore
-Super_Offshore_filepath = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Super\CSVs"
-# Declare file path for combo paycodes
+allowancePaycodes_filepath      = os.path.join(INPUT_DIR, "Allowances_crossEntity.csv")
+contributionPaycodes_filepath   = os.path.join(INPUT_DIR, "Contributions_crossEntity.csv")
+deductionsPaycodes_filepath     = os.path.join(INPUT_DIR, "Deductions_crossEntity.csv")
+incomePaycodes_filepath         = os.path.join(INPUT_DIR, "Income_crossEntity.csv")
+Employee_labelsLabour_filepath  = os.path.join(INPUT_DIR, "LABOUR", "Employee_Labels.csv")
+Employee_labelsOffshore_filepath = os.path.join(INPUT_DIR, "OFFSHORE", "Employee_Labels.csv")
 
 
 # Generate DataFrames
@@ -132,7 +115,7 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
 
     # ---- 3) Paycode mapping ----
     # Update this path if needed
-    paymap_path = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\2025.05.21_PAYCODE_MAPPING.xlsx"
+    paymap_path = os.path.join(INPUT_DIR, "PAYCODE_MAPPING", "2.06.2026_PAYCODE_MAPPING.xlsx")
     paycode_mapping = pd.read_excel(paymap_path, sheet_name='UPDATED MAPPING', engine='openpyxl')
     
   

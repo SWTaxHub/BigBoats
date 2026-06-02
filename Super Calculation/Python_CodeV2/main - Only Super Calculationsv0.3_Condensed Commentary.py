@@ -1,10 +1,11 @@
 import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 print(sys.executable)
 
 import re
 import datetime
 
-import os
 from dataframes import(
     # process_income_paycodes,
     # process_deduction_paycodes,
@@ -266,7 +267,7 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
     # ---- 3) Paycode mapping ----
     # Update this path if needed
     #paymap_path = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\14.01.2025_PAYCODE_MAPPING.xlsx"
-    paymap_path = os.path.join(INPUT_DIR, "PAYCODE_MAPPING", "1.06.2026_PAYCODE_MAPPING.xlsx")
+    paymap_path = os.path.join(INPUT_DIR, "PAYCODE_MAPPING", "2.06.2026_PAYCODE_MAPPING.xlsx")
     paycode_mapping = pd.read_excel(paymap_path, sheet_name='UPDATED MAPPING', engine='openpyxl')
     
   
