@@ -26,8 +26,10 @@ There are **two scripts** in this folder. Both validate Superannuation Guarantee
 
 ### Which one to run?
 
-- Run **v0.3** if you only need the SG compliance check with a formatted Excel deliverable.
-- Run **v1.5** if you also need payroll tax classification, paycode-level summaries, and comment analytics.
+- Run **main - Only Super Calculationsv0.3_Condensed Commentary.py** if you only need the SG compliance check with a formatted Excel deliverable.
+- **V0.3 was used for previous output sent to the client and the latest file shared with the team**
+
+- Run **main v1.5 - Payroll Tax Recs.py** if you also need payroll tax classification, paycode-level summaries, and comment analytics.
 
 Both use the same `dataframes.py` and mapping file — core payroll numbers will match.
 
@@ -39,25 +41,53 @@ Both use the same `dataframes.py` and mapping file — core payroll numbers will
 input\ (source CSVs)  -->  Python Script  -->  data\ (output results)
 ```
 
-All input paths are relative to `Super Calculation\input\`. Source files from OneDrive should be placed in the following folder structure:
+All input paths are relative to `Super Calculation\input\`. Source files from OneDrive should be placed in the following folder structure. The scripts write results to `Super Calculation\data\` (auto-created on first run). All output CSVs are **overwritten** each run, so copy any files you want to keep before re-running.
 
 ```
-Super Calculation\input\
-├── LABOUR
-│   ├── Payroll\          ← payroll .csv files
-│   ├── Super\            ← super .csv files
-│   └── Employee_Labels.csv   (v1.5 only)
-├── OFFSHORE
-│   ├── Payroll\          ← payroll .csv files
-│   ├── Super\            ← super .csv files
-│   └── Employee_Labels.csv   (v1.5 only)
-├── PAYCODE_MAPPING
-│   └── 2.06.2026_PAYCODE_MAPPING.xlsx
-├── Allowances_crossEntity.csv   (v1.5 only)
-├── Contributions_crossEntity.csv (v1.5 only)
-├── Deductions_crossEntity.csv   (v1.5 only)
-└── Income_crossEntity.csv       (v1.5 only)
+Super Calculation\
+├── input\
+│   ├── LABOUR
+│   │   ├── Payroll\          ← payroll .csv files
+│   │   ├── Super\            ← super .csv files
+│   │   └── Employee_Labels.csv   (v1.5 only)
+│   ├── OFFSHORE
+│   │   ├── Payroll\          ← payroll .csv files
+│   │   ├── Super\            ← super .csv files
+│   │   └── Employee_Labels.csv   (v1.5 only)
+│   ├── PAYCODE_MAPPING
+│   │   └── 2.06.2026_PAYCODE_MAPPING.xlsx
+│   ├── Allowances_crossEntity.csv   (v1.5 only)
+│   ├── Contributions_crossEntity.csv (v1.5 only)
+│   ├── Deductions_crossEntity.csv   (v1.5 only)
+│   └── Income_crossEntity.csv       (v1.5 only)
+└── data\                       ← auto-created, outputs written here
 ```
+
+## Setting Up Input Data
+
+**Source:** All source files have been stored in the team sharepoint - link sent seperately 
+```
+
+```
+
+**Steps:**
+
+1. **Payroll CSVs** — Export from the payroll system for each financial year. The script reads **all** `.csv` files in the folder, so you can drop in one combined file or multiple split files. Expected naming: `*PayrollTest_combined.csv`.
+
+2. **Super CSVs** — Export super contribution data per entity. Place in the corresponding `Super\` subfolder.
+
+3. **Paycode Mapping** — Copy the latest mapping spreadsheet from OneDrive. The script expects `2.06.2026_PAYCODE_MAPPING.xlsx` with a sheet named `UPDATED MAPPING`.
+
+4. **Employee Labels (v1.5 only)** — Optional CSV with employee classification data. If missing, the script still runs but skips this enrichment.
+
+5. **Cross-Entity CSVs (v1.5 only)** — Files like `Allowances_crossEntity.csv` etc. If you don't need payroll tax classification, use v0.3 instead and skip these.
+
+**Quick checklist before running:**
+- [ ] At least one `.csv` file in each `Payroll\` folder
+- [ ] At least one `.csv` file in each `Super\` folder
+- [ ] Mapping xlsx exists at `input\PAYCODE_MAPPING\`
+- [ ] All CSVs use `latin1` encoding (standard export from their payroll system)
+- [ ] No trailing whitespace issues — the script handles this automatically
 
 ## Input Data Sources (all under `Super Calculation\input\`)
 
