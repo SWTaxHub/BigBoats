@@ -288,13 +288,10 @@ def process_super_data(directory):
 
 
 
-# files = [file for file in os.listdir(r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll")]
-
-
+# files = [file for file in os.listdir(INPUT_DIR / "Labour Payroll")]
 # for file in files:
-    
-#    temp_df = pd.read_csv(os.path.join(r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll", file), encoding='latin1', low_memory=False)
-#    all_years_payHist = pd.concat([all_years_payHist, temp_df], ignore_index=True)  # Use ignore_index=True to reset index
+#    temp_df = pd.read_csv(os.path.join(INPUT_DIR / "Labour Payroll", file), encoding='latin1', low_memory=False)
+#    all_years_payHist = pd.concat([all_years_payHist, temp_df], ignore_index=True)
 
 
 # all_years_payHist =  all_years_payHist.rename(columns={'Period Ending' : 'Period_Ending', 'Full Name' : 'Full_Name', 'Pay No.' : 'Pay_Number', 'Hours/ Value' : 'Hours/Value', 
@@ -329,19 +326,14 @@ superOffshore = pd.DataFrame()
 
 
 Awards = pd.DataFrame()
-
-#Declare file path for Award Coverage
-Awards = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Super_Analysis_Python\Awards\5.Award Coverage 15.05.24.csv"
+Awards = os.path.join(os.path.dirname(__file__), "input", "Awards", "5.Award Coverage 15.05.24.csv")
 
 payCodeList = pd.DataFrame()
-
-#Declare the file path for Pay code list
-payCodeList = r'C:\\Users\\USER\\OneDrive - SW Accountants\\Desktop\\Super_Analysis_Python\\payCodeList\\Pay-code data.csv'
-
+payCodeList = os.path.join(os.path.dirname(__file__), "input", "payCodeList", "Pay-code data.csv")
 
 
 # Define payroll_data file path
-payroll_data = r"C:\\Users\\USER\\OneDrive - SW Accountants\\Desktop\\Super_Analysis_Python\\Payroll\\Payroll data.xlsx"
+payroll_data = os.path.join(os.path.dirname(__file__), "input", "Payroll data.xlsx")
 
 
 #Need to see if this sheet needs to be used later in the code 
@@ -350,16 +342,15 @@ payroll_data = r"C:\\Users\\USER\\OneDrive - SW Accountants\\Desktop\\Super_Anal
 
 
 superClearningHouseTPD = pd.DataFrame()
-
-superClearningHouseTPD = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx"
+superClearningHouseTPD = os.path.join(os.path.dirname(__file__), "input", "superClearingHouse", "Super Clearing House data.xlsx")
 
 # Read data from Excel for super clearing house sheet called Append1
-if os.path.exists(r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx"):
+sch_path = os.path.join(os.path.dirname(__file__), "input", "superClearingHouse", "Super Clearing House data.xlsx")
+if os.path.exists(sch_path):
     superClearingHouse = pd.read_excel(
-        r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Super_Analysis_Python\superClearingHouse\Super Clearing House data.xlsx",
+        sch_path,
         sheet_name=['Append1']  # Specifying the sheet to read
     )
-    # Access the specific sheet's data
     superClearingHouseData = superClearingHouse['Append1']    
 else:
     superClearingHouse = pd.DataFrame()

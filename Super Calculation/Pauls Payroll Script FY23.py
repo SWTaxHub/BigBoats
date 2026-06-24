@@ -5,22 +5,22 @@ import pandas as pd
 import numpy as np
 
 # Define the input file path
-#file_path = r'C:\Users\USER\Downloads\PRNTFILE.RPT 1.txt'  # If the file is not in the current directory, use a full path.
+#file_path = r'<your-downloads-folder>\PRNTFILE.RPT 1.txt'  # If the file is not in the current directory, use a full path.
 # PArt 1
-#file_path = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour24_25_Part1.txt"
+#file_path = r"<your-input-folder>\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour24_25_Part1.txt"
 # Part 2
-#file_path = r"C:\Users\USER\Downloads\Pay_Details_HistoryFY25_Labour_Part2.txt"
+#file_path = r"<your-downloads-folder>\Pay_Details_HistoryFY25_Labour_Part2.txt"
 
 
 # # Part 1 of Extract
-#file_path = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part1.txt"
-#file_path = r"C:\Users\USER\Downloads\Pay_Details_History_Labour22-23_Part1_InclADJ.txt"
-#file_path = r"C:\Users\USER\Downloads\Pay_Details_History_Labour22-23_Part1_Excl_ADJ.txt"
+#file_path = r"<your-input-folder>\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part1.txt"
+#file_path = r"<your-downloads-folder>\Pay_Details_History_Labour22-23_Part1_InclADJ.txt"
+#file_path = r"<your-downloads-folder>\Pay_Details_History_Labour22-23_Part1_Excl_ADJ.txt"
 
 # part 2 of Extract
-#file_path = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part2.txt"
-file_path = r"C:\Users\USER\Downloads\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
-#file_path = r"C:\Users\USER\Downloads\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
+#file_path = r"<your-input-folder>\Client Projects\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Payroll\Pay_Details_History_Labour22_23_Part2.txt"
+file_path = r"<your-downloads-folder>\Pay_Details_History_Labour22-23_Part2_InclADJ.txt"
+#file_path = r"<your-downloads-folder>\Pay_Details_History_Labour22-23_Part2_Excl_ADJ.txt"
 
 
 
@@ -162,14 +162,14 @@ print(df.columns)
 # Display the resulting table in the console (without the DataFrame index).
 print(df.to_string(index=False))
 
-df.to_csv(r"C:\Users\USER\Downloads\Pay_Details_History_labour_23_part2.csv")
+df.to_csv(r"<your-downloads-folder>\Pay_Details_History_labour_23_part2.csv")
 
 
 # concat Labour25_PayrollTest_part1.csv and abour25_PayrollTest_part2.csv
 
 ## Load the CSV files
-df1 = pd.read_csv(r"C:\Users\USER\Downloads\Pay_Details_History_labour_23_part1.csv")
-df2 = pd.read_csv(r"C:\Users\USER\Downloads\Pay_Details_History_labour_23_part2.csv")
+df1 = pd.read_csv(r"<your-downloads-folder>\Pay_Details_History_labour_23_part1.csv")
+df2 = pd.read_csv(r"<your-downloads-folder>\Pay_Details_History_labour_23_part2.csv")
 super_df = pd.read_excel(r"C:\Git\BigBoats\Payroll_23_formatted.xlsx")
 
 # Concatenate the dataframes
