@@ -1,9 +1,9 @@
 import csv
 import re
 
-# Corrected file paths (Use raw string r"" or replace \ with /)
-input_file = r'C:\Users\USER\Downloads\Employee_Labels.txt'
-output_file = r'C:\Users\USER\OneDrive - SW Accountants\Desktop\Super_Analysis_Python\Maritimo Dataset cleaning\Employee_Labels.csv'
+# Update these paths to match your environment
+input_file = r'.\input\LABOUR\Employee_Labels.txt'
+output_file = r'.\input\LABOUR\Employee_Labels.csv'
 
 
 

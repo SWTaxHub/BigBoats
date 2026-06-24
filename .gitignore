@@ -3,3 +3,6 @@
 *.xlsx
 *.pdf
 *.docx
+*.zip
+FLour/
+__pycache__/

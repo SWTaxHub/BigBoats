@@ -45,11 +45,9 @@ from pathlib import Path
 
 
 Employee_labelsLabour = pd.DataFrame()
-#Declare File path for Employee Labels Labour
-Employee_labelsLabour = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO LABOUR\Employee details\Employee_Labels.csv"
+Employee_labelsLabour = os.path.join(os.path.dirname(__file__), "input", "LABOUR", "Employee_Labels.csv")
 Employee_labelsOffshore = pd.DataFrame()
-#Declare File path for Employee Labels Offshore
-Employee_labelsOffshore = r"C:\Users\USER\OneDrive - SW Accountants\Desktop\Maritimo\Shared Folder\Payroll reports\MARITIMO OFFSHORE\Employee details\Employee_Labels.csv"
+Employee_labelsOffshore = os.path.join(os.path.dirname(__file__), "input", "OFFSHORE", "Employee_Labels.csv")
 
 leaveHistoryLabour = pd.DataFrame()
 leaveHistoryOffshore = pd.DataFrame()
