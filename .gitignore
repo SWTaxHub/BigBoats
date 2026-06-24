@@ -6,6 +6,3 @@
 *.zip
 FLour/
 __pycache__/
-
-# Allow tracking of specific files needed by the scripts
-!Super Calculation/input/excluded_employees.csv

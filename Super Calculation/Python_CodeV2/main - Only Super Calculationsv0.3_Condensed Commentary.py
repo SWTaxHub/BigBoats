@@ -315,9 +315,11 @@ def payroll_calc(Payroll_Labour_data, file_suffix="LABOUR / OFFSHORE"):
 
 
 # Drop lines for payment processing lines for data cleansing
-    excluded_names = pd.read_csv(
-        os.path.join(INPUT_DIR, "excluded_employees.csv")
-    )['Name'].tolist()
+    excluded_path = os.path.join(INPUT_DIR, "excluded_employees.csv")
+    if os.path.exists(excluded_path):
+        excluded_names = pd.read_csv(excluded_path)['Name'].tolist()
+    else:
+        excluded_names = []
     drop_names = excluded_names + [
         # Over lines to drop
         '2ND YEAR',

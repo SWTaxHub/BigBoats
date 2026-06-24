@@ -9,7 +9,7 @@ BigBoats/
 ├── input/
 │   ├── PAYCODE_MAPPING_v1.xlsx       # Pay code mapping (v1.5 script)
 │   ├── PAYCODE_MAPPING_v2.xlsx       # Pay code mapping (v0.3 script)
-│   ├── excluded_employees.csv         # Employees to exclude from calculations
+│   ├── excluded_employees.csv         # (optional, local-only) Employees to exclude
 │   ├── Awards/
 │   │   └── 5.Award Coverage *.csv
 │   ├── LABOUR/
@@ -27,6 +27,8 @@ BigBoats/
 ```
 
 File paths are defined in `Super Calculation/dataframes.py` using `os.path.join(os.path.dirname(__file__), ...)` so they resolve relative to the project root.
+
+**`excluded_employees.csv` (optional):** Create this file locally to exclude specific employees from calculations. Format — single column `Name` with uppercase full names (one per line). If the file doesn't exist, the scripts skip the exclusion filter with no error. The retired scripts in `Super Calculation/Retired/Python_Code/` contain a historical reference list you can use as a starting point.
 
 ## Scripts Overview
 
